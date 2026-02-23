@@ -2,14 +2,15 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView, TextInput, Modal } from 'react-native';
 import { useState } from 'react';
 import { useTransactions } from '@/lib/context/TransactionContext';
-import type { TransactionType, Category } from '@/lib/types/transaction';
+import { useApp } from '@/lib/context/AppContext';
+import type { TransactionType } from '@/lib/types/transaction';
 
-const CATEGORIES: Record<TransactionType, Category[]> = {
+const CATEGORIES: Record<TransactionType, string[]> = {
   expense: ['food', 'transport', 'entertainment', 'shopping', 'utilities', 'health', 'other'],
   income: ['salary', 'investment', 'other'],
 };
 
-const CATEGORY_ICONS: Record<Category, string> = {
+const CATEGORY_ICONS: Record<string, string> = {
   food: '🍔',
   transport: '🚗',
   entertainment: '🎬',
@@ -22,12 +23,23 @@ const CATEGORY_ICONS: Record<Category, string> = {
 };
 
 export default function AddTransactionScreen() {
-  const { addTransaction } = useTransactions();
+  const txContext = useTransactions();
+  const { addTransaction: addAppTx, sources, addSource } = useApp();
+  const { addTransaction, subcategories, addSubcategory } = txContext;
   const [type, setType] = useState<TransactionType>('expense');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<Category>('food');
+  const [selectedCategory, setSelectedCategory] = useState<string>('food');
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [showSubcategoryModal, setShowSubcategoryModal] = useState(false);
+  const [newSubcategoryName, setNewSubcategoryName] = useState('');
+  const [showSourceModal, setShowSourceModal] = useState(false);
+  const [selectedSourceId, setSelectedSourceId] = useState<string | null>(
+    sources && sources.length > 0 ? sources[0].id : null
+  );
+  const [newSourceName, setNewSourceName] = useState('');
+  const [newSourceType, setNewSourceType] = useState<'Bank' | 'Cash' | 'Other'>('Bank');
 
   const handleAddTransaction = () => {
     if (!amount || isNaN(Number(amount))) {
@@ -35,18 +47,33 @@ export default function AddTransactionScreen() {
       return;
     }
 
-    addTransaction({
+    const txPayload: any = {
       amount: Number(amount),
       category: selectedCategory,
+      subcategory: selectedSubcategory || undefined,
       type,
+      source: selectedSourceId || '',
       description: description || selectedCategory,
       date: new Date().toISOString(),
-    });
+    };
+
+    // Update both contexts/storage so UI using either context stays in sync
+    try {
+      addTransaction(txPayload);
+    } catch (e) {
+      console.warn('tx context add failed', e);
+    }
+    try {
+      addAppTx(txPayload);
+    } catch (e) {
+      console.warn('app context add failed', e);
+    }
 
     // Reset form
     setAmount('');
     setDescription('');
     setSelectedCategory(type === 'expense' ? 'food' : 'salary');
+    setSelectedSubcategory(null);
     alert('Transaction recorded successfully! ✅');
   };
 
@@ -101,6 +128,16 @@ export default function AddTransactionScreen() {
           </Text>
         </Pressable>
 
+        {/* Subcategory Selection */}
+        <View style={{ marginTop: 12 }}>
+          <Text style={styles.label}>Subcategory (optional)</Text>
+          <Pressable style={styles.categoryButton} onPress={() => setShowSubcategoryModal(true)}>
+            <Text style={styles.categoryButtonText}>
+              {selectedSubcategory || 'Select or add subcategory'}
+            </Text>
+          </Pressable>
+        </View>
+
         <Modal
           visible={showCategoryModal}
           transparent
@@ -138,6 +175,143 @@ export default function AddTransactionScreen() {
             </View>
           </View>
         </Modal>
+
+        <Modal
+          visible={showSubcategoryModal}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setShowSubcategoryModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Subcategories for {selectedCategory}</Text>
+              <ScrollView style={styles.categoryGrid}>
+                {(subcategories && subcategories.length > 0) ? (
+                  subcategories
+                    .filter((s: any) => s.categoryId === selectedCategory)
+                    .map((s: any) => (
+                      <Pressable
+                        key={s.id}
+                        style={[
+                          styles.categoryOption,
+                          selectedSubcategory === s.name && styles.categoryOptionSelected,
+                        ]}
+                        onPress={() => {
+                          setSelectedSubcategory(s.name);
+                          setShowSubcategoryModal(false);
+                        }}
+                      >
+                        <Text style={styles.categoryOptionText}>{s.name}</Text>
+                      </Pressable>
+                    ))
+                ) : null}
+
+                <View style={{ marginTop: 12 }}>
+                  <Text style={styles.label}>Add new subcategory</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter subcategory name"
+                    value={newSubcategoryName}
+                    onChangeText={setNewSubcategoryName}
+                  />
+                  <Pressable
+                    style={[styles.addButton, { marginTop: 12 }]}
+                    onPress={async () => {
+                      if (!newSubcategoryName.trim()) return alert('Enter name');
+                      if (addSubcategory) {
+                        await addSubcategory(newSubcategoryName.trim(), selectedCategory);
+                        setSelectedSubcategory(newSubcategoryName.trim());
+                        setNewSubcategoryName('');
+                        setShowSubcategoryModal(false);
+                      }
+                    }}
+                  >
+                    <Text style={styles.addButtonText}>Add Subcategory</Text>
+                  </Pressable>
+                </View>
+              </ScrollView>
+              <Pressable
+                style={styles.closeButton}
+                onPress={() => setShowSubcategoryModal(false)}
+              >
+                <Text style={styles.closeButtonText}>Close</Text>
+              </Pressable>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Source selection for income (and optional for expense) */}
+        {type === 'income' && (
+          <View style={{ marginTop: 12 }}>
+            <Text style={styles.label}>Source</Text>
+            <Pressable style={styles.categoryButton} onPress={() => setShowSourceModal(true)}>
+              <Text style={styles.categoryButtonText}>{selectedSourceId ? sources.find(s => s.id === selectedSourceId)?.name : 'Select or add source'}</Text>
+            </Pressable>
+
+            <Modal
+              visible={showSourceModal}
+              transparent
+              animationType="slide"
+              onRequestClose={() => setShowSourceModal(false)}
+            >
+              <View style={styles.modalOverlay}>
+                <View style={styles.modalContent}>
+                  <Text style={styles.modalTitle}>Select or Add Source</Text>
+                  <ScrollView style={styles.categoryGrid}>
+                    {sources.map(src => (
+                      <Pressable
+                        key={src.id}
+                        style={styles.categoryOption}
+                        onPress={() => {
+                          setSelectedSourceId(src.id);
+                          setShowSourceModal(false);
+                        }}
+                      >
+                        <Text style={styles.categoryOptionText}>{src.name} ({src.type})</Text>
+                      </Pressable>
+                    ))}
+
+                    <View style={{ marginTop: 12 }}>
+                      <Text style={styles.label}>New source name</Text>
+                      <TextInput style={styles.input} value={newSourceName} onChangeText={setNewSourceName} placeholder="e.g., My Bank" />
+                      <Text style={[styles.label, { marginTop: 8 }]}>Type</Text>
+                      <View style={{ flexDirection: 'row', gap: 8 }}>
+                        <Pressable style={[styles.typeButton, newSourceType === 'Bank' && styles.typeButtonActive]} onPress={() => setNewSourceType('Bank')}>
+                          <Text style={[styles.typeButtonText, newSourceType === 'Bank' && styles.typeButtonTextActive]}>Bank</Text>
+                        </Pressable>
+                        <Pressable style={[styles.typeButton, newSourceType === 'Cash' && styles.typeButtonActive]} onPress={() => setNewSourceType('Cash')}>
+                          <Text style={[styles.typeButtonText, newSourceType === 'Cash' && styles.typeButtonTextActive]}>Cash</Text>
+                        </Pressable>
+                        <Pressable style={[styles.typeButton, newSourceType === 'Other' && styles.typeButtonActive]} onPress={() => setNewSourceType('Other')}>
+                          <Text style={[styles.typeButtonText, newSourceType === 'Other' && styles.typeButtonTextActive]}>Other</Text>
+                        </Pressable>
+                      </View>
+                      <Pressable
+                        style={[styles.addButton, { marginTop: 12 }]}
+                        onPress={async () => {
+                          if (!newSourceName.trim()) return alert('Enter source name');
+                          try {
+                            const id = await addSource(newSourceName.trim(), newSourceType, 0);
+                            setSelectedSourceId(id);
+                          } catch (e) {
+                            console.warn('addSource failed', e);
+                          }
+                          setNewSourceName('');
+                          setShowSourceModal(false);
+                        }}
+                      >
+                        <Text style={styles.addButtonText}>Add Source</Text>
+                      </Pressable>
+                    </View>
+                  </ScrollView>
+                  <Pressable style={styles.closeButton} onPress={() => setShowSourceModal(false)}>
+                    <Text style={styles.closeButtonText}>Close</Text>
+                  </Pressable>
+                </View>
+              </View>
+            </Modal>
+          </View>
+        )}
       </View>
 
       {/* Description Input */}

@@ -1,0 +1,117 @@
+App Features, Connections & Libraries
+
+1) Summary
+- App purpose: A local transaction tracker (Expo React Native + TypeScript) that records transactions, persists them locally, shows a dashboard and analytics, provides history and a chat-style AI insights view, and can be built via EAS for Android.
+
+2) Feature List (each feature + how it's connected + libraries used)
+
+- Transaction Data Model
+  - What: `Transaction` type with fields like id, amount, date, category, type, note.
+  - Connected to: All screens and utilities. It's the canonical shape stored in the `TransactionContext` and persisted to AsyncStorage.
+  - Libraries: TypeScript (type definitions in `lib/types/transaction.ts`).
+
+- Global State & Persistence (TransactionContext)
+  - What: `TransactionProvider` (React Context) exposing `transactions`, `addTransaction()`, `deleteTransaction()`, and loading state.
+  - Connected to: Wrapped at app root (`app/_layout.tsx`) so all route screens use it via `useContext` or exported hooks.
+  - Persistence: Loads/saves `transactions` from/to `@react-native-async-storage/async-storage` on startup and on mutation.
+  - Libraries: React Context, `@react-native-async-storage/async-storage`.
+
+- Add Transaction Screen
+  - What: Form to create a new transaction (amount, type, category, date, note), validation, and submit.
+  - Connected to: Calls `addTransaction()` from `TransactionContext`. On submit, the context updates state and persists to AsyncStorage; screens that consume `transactions` re-render.
+  - Libraries: React, React Native, expo-router (route), TypeScript, any form UI components in `components/`.
+
+- History Screen
+  - What: Scrollable/flat list of recorded transactions with ability to long-press or gesture-delete a transaction.
+  - Connected to: Reads `transactions` from `TransactionContext` and calls `deleteTransaction()` to remove items. Uses `FlatList` (React Native) and typing for list items.
+  - Libraries: React Native `FlatList`, TypeScript.
+
+- Dashboard / Home (Quick Stats)
+  - What: Shows totals (e.g., balance, expenses, income), recent transactions, and quick metrics.
+  - Connected to: Reads `transactions` from `TransactionContext`, uses analytics utils to compute totals and recent items.
+  - Libraries: React, React Native, custom UI components in `components/`.
+
+- Analytics Screen
+  - What: Computes and displays: total income/expense, category breakdown, monthly trends, daily averages. Also shows AI-generated insights (rule-based by default).
+  - Connected to: Uses `transactions` from context and calls functions from `lib/utils/analytics.ts` (e.g., `calculateAnalytics()` and `generateAIInsights()`). Visual components read the returned analytics object and render charts/lists.
+  - Libraries: Custom analytics utils (TypeScript), React Native for UI, react-native-web adjustments for web compatibility.
+
+- Chat / AI Insights Screen
+  - What: Chat-like UI where user asks questions and receives insights. Currently uses a rule-based `generateAIResponse()` and `generateAIInsights()` that analyze local analytics to craft responses.
+  - Connected to: Calls analytics utils which query `transactions`, and formats responses. Designed so a real AI call (OpenAI/Anthropic) can replace the rule-based generator.
+  - Libraries: TypeScript, React Native, optional networking libs if integrating a real model (axios/fetch). Secrets should be stored server-side or via secure env.
+
+- Themed Components & Shared UI
+  - What: `themed-text.tsx`, `themed-view.tsx`, `ui/` components (collapsible, icon symbols) provide consistent styling and small UI building blocks used across screens.
+  - Connected to: Used by Dashboard, History, Add, and Analytics screens for consistent look & feel.
+  - Libraries: React Native, expo-asset/images, project-specific styling in `constants/theme.ts`.
+
+- Expo Router Navigation (tabs)
+  - What: File-based routing with `(tabs)` folder providing bottom/tab navigation and route grouping for `dashboard`, `add`, `history`, `analytics`, `chat`.
+  - Connected to: `app/(tabs)/_layout.tsx` sets up the Tab navigator and icons; each tab screen reads the context.
+  - Libraries: `expo-router`, `expo` (routing + linking), React Navigation under the hood.
+
+- Web Compatibility Adjustments
+  - What: Small style changes (replace shadow props with `boxShadow`) and TypeScript fixes so the app runs under `react-native-web` for Codespace web preview.
+  - Connected to: UI components and global styles.
+  - Libraries: `react-native-web` (via Expo web), TypeScript.
+
+- Build & Distribution (EAS)
+  - What: `eas.json` added so the project can use EAS cloud builds to produce APK/AAB for Android. This enables device installs without local Android SDK.
+  - Connected to: The repository and CI; results (APK) downloaded by the user.
+  - Libraries/Tools: `eas-cli` (EAS service), Expo Application Services.
+
+- Dev Scripts and Tooling
+  - What: `package.json` scripts (expo start, web), ESLint config, TypeScript config, `scripts/reset-project.js` helper for dev.
+  - Connected to: Developer experience and local runs in Codespace.
+  - Libraries/Tools: Node, npm/yarn, ESLint, TypeScript, Expo CLI.
+
+3) File / Module Relationships (how pieces connect)
+- `app/_layout.tsx` wraps the entire app in `TransactionProvider` and theme providers. This ensures all nested routes can access transactions and mutate them.
+- `lib/context/TransactionContext.tsx` implements state + persistence. It exposes `transactions`, `addTransaction()`, `deleteTransaction()`, and loads initial state from AsyncStorage. Screens import context hooks or useContext to access these methods.
+- `lib/utils/analytics.ts` is a pure-logic module that computes aggregates and formats AI-insight data. Screens import these functions; the Chat screen uses them to build responses.
+- `app/(tabs)/` contains route components (index.tsx, add.tsx, history.tsx, analytics.tsx, chat.tsx) which are thin UI layers that read state from context and call into `lib/utils` when necessary.
+- `components/` contains small reusable UI pieces consumed by the route screens.
+- `eas.json` is a top-level build config used by EAS when building binaries in the cloud.
+
+4) Abstract, clear explanation of how the app works (end-to-end)
+- Data flow:
+  1. User opens the app -> `TransactionProvider` loads saved transactions from `AsyncStorage` into memory.
+  2. User performs actions: adds a transaction via Add screen -> `addTransaction()` in context is called
+     -> context updates in-memory list and writes the serialized list back to `AsyncStorage`.
+  3. Any screen subscribed to the context (Dashboard, History, Analytics, Chat) re-renders with the updated `transactions`.
+  4. Analytics functions take the live `transactions` array and compute totals, trends, and category breakdowns on demand. UI components render those values.
+  5. Chat/AI screen consumes analytics output to answer queries or produce simple insights. This is currently a local, deterministic function but is structured to allow replacement with a remote LLM call.
+
+- Architectural patterns:
+  - Single source of truth: `TransactionContext` holds the canonical data and persistence logic.
+  - Separation of concerns: UI components are pure renderers; business logic (analytics, data types, persistence) live in `lib/` outside the `app/` routes to avoid expo-router treating them as screens.
+  - Minimal backend: currently none — persistence is local-only. The app is intentionally structured so a backend (Supabase/Firebase/custom API) can replace AsyncStorage by implementing similar load/save methods and an auth flow.
+
+- Why this is safe/easy to extend:
+  - Modular utilities (`lib/utils/analytics.ts`) let you test analytics independently and swap in remote analytics or AI calls.
+  - The Chat screen is decoupled from any specific AI provider — swapping to OpenAI or Anthropic is a single change point.
+  - Using file-based routes (expo-router) makes adding new views straightforward.
+
+5) Libraries & Tools (consolidated)
+- Core runtime: `expo`, `react`, `react-native`, `typescript`
+- Routing/navigation: `expo-router` (file-based routing, tab layout)
+- Persistence: `@react-native-async-storage/async-storage`
+- Build/distribution: `eas-cli` / Expo Application Services (EAS) + `eas.json`
+- Web support: `react-native-web` (via Expo web), web style adjustments
+- Dev tooling: `node`, `npm`/`yarn`, `ESLint`, TypeScript compiler
+- Optional (for future AI integration): `openai` or `axios`/`fetch` client, server-side frameworks (Express/Nest) or managed services (Supabase Functions)
+
+6) Known limitations (concise)
+- Local-only storage: No multi-device sync or authentication (data lives in AsyncStorage per device/profile).
+- AI integration: Currently rule-based; real LLMs require API keys and secure server-side calls or properly managed client secrets.
+- Device testing in Codespace: Physical-device Expo Go access is limited without tunnel/ngrok or cloud builds (EAS) due to Codespace network isolation.
+
+7) Next-extension points (where to add features)
+- Add user auth + remote DB (Supabase/Firebase) to enable multi-device sync and backups.
+- Replace rule-based Chat with an LLM via a server-side proxy to keep keys secure.
+- Add export (CSV), recurring transactions, notifications, and scheduled reports.
+- Add unit tests for `lib/utils/analytics.ts` and the context persistence logic.
+
+---
+Generated from the current workspace structure and code organization (Types, Context, app/(tabs) screens, lib utils, components, and EAS config).

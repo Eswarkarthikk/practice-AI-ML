@@ -1,354 +1,422 @@
-import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
+import React, { useMemo } from 'react';
+import {
+  View,
+  StyleSheet,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  StatusBar,
+} from 'react-native';
 import { useRouter } from 'expo-router';
-import { useTransactions } from '@/lib/context/TransactionContext';
-import { calculateAnalytics } from '@/lib/utils/analytics';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import { Card } from '@/components/shared/CardComponent';
+import { TransactionItem } from '@/components/TransactionItem';
+import { FooterNavigation } from '@/components/FooterNavigation';
+import { useApp } from '@/lib/context/AppContext';
+import { useBudget } from '@/lib/features/budgets/BudgetContext';
+import { useGoals } from '@/lib/features/goals/GoalContext';
+import { COLORS, TYPOGRAPHY, SPACING, PADDING, BORDER_RADIUS, SHADOWS } from '@/lib/theme';
+import { formatCurrency, isThisMonth } from '@/lib/utils/helpers';
 
 export default function HomeScreen() {
-  const { transactions, loading } = useTransactions();
-  const analytics = calculateAnalytics(transactions);
   const router = useRouter();
+  const { profile, sources, transactions } = useApp();
 
-  const recentTransactions = transactions.slice(0, 5);
+  // Calculate totals
+  const balance = useMemo(() => {
+    let total = 0;
+    sources.forEach((source) => {
+      total += source.startingAmount;
+      const sourceTransactions = transactions.filter((t) => t.source === source.id);
+      sourceTransactions.forEach((t) => {
+        if (t.type === 'income') {
+          total += t.amount;
+        } else {
+          total -= t.amount;
+        }
+      });
+    });
+    return total;
+  }, [sources, transactions]);
 
-  const quickStats = [
-    {
-      label: 'Balance',
-      value: `₹${analytics.balance.toFixed(2)}`,
-      color: '#2196F3',
-      icon: '💳',
-    },
-    {
-      label: 'Income',
-      value: `₹${analytics.totalIncome.toFixed(2)}`,
-      color: '#4CAF50',
-      icon: '💰',
-    },
-    {
-      label: 'Expenses',
-      value: `₹${analytics.totalExpense.toFixed(2)}`,
-      color: '#f44336',
-      icon: '💸',
-    },
-  ];
+  const monthlyIncome = useMemo(() => {
+    return transactions
+      .filter((t) => t.type === 'income' && isThisMonth(t.date))
+      .reduce((sum, t) => sum + t.amount, 0);
+  }, [transactions]);
 
-  const shortcuts = [
-    { label: 'Add', icon: '➕', action: () => router.push('/(tabs)/add') },
-    { label: 'History', icon: '📝', action: () => router.push('/(tabs)/history') },
-    { label: 'Analytics', icon: '📈', action: () => router.push('/(tabs)/analytics') },
-    { label: 'Ask AI', icon: '🤖', action: () => router.push('/(tabs)/chat') },
-  ];
+  const monthlyExpense = useMemo(() => {
+    return transactions
+      .filter((t) => t.type === 'expense' && isThisMonth(t.date))
+      .reduce((sum, t) => sum + t.amount, 0);
+  }, [transactions]);
+
+  const { getBudgetStats } = useBudget();
+  const { goals, getGoalStats } = useGoals();
+
+  const currentMonthKey = useMemo(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  }, []);
+
+  const budgetStats = useMemo(() => getBudgetStats(currentMonthKey), [getBudgetStats, currentMonthKey]);
+
+  const primaryGoal = useMemo(() => (goals && goals.length > 0 ? goals[0] : null), [goals]);
+  const primaryGoalStats = useMemo(() => (primaryGoal ? getGoalStats(primaryGoal.id) : null), [primaryGoal, getGoalStats]);
+
+  const recentTransactions = useMemo(() => {
+    return transactions.sort((a, b) => b.timestamp - a.timestamp).slice(0, 5);
+  }, [transactions]);
+
+  const getCategoryIcon = (category: string) => {
+    const icons: { [key: string]: string } = {
+      food: '🍔',
+      transport: '🚗',
+      entertainment: '🎬',
+      shopping: '🛍️',
+      bills: '📄',
+      health: '🏥',
+      other: '📦',
+    };
+    return icons[category] || '📌';
+  };
+
+  const handleAddTransaction = () => {
+    router.push('/add-transaction' as any);
+  };
+
+  const handleAnalytics = () => {
+    router.push('/analytics' as any);
+  };
+
+  const handleBudget = () => {
+    router.push('/budget' as any);
+  };
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.greeting}>Welcome Back! 👋</Text>
-        <Text style={styles.date}>
-          {new Date().toLocaleDateString('en-IN', { weekday: 'long', month: 'long', day: 'numeric' })}
-        </Text>
-      </View>
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.bgLight} />
 
-      {/* Quick Stats */}
-      <View style={styles.statsContainer}>
-        {quickStats.map((stat, index) => (
-          <View key={index} style={[styles.statCard, { borderLeftColor: stat.color }]}>
-            <Text style={styles.statIcon}>{stat.icon}</Text>
-            <Text style={styles.statLabel}>{stat.label}</Text>
-            <Text style={[styles.statValue, { color: stat.color }]}>{stat.value}</Text>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.greeting}>Hello, {profile?.name || 'User'}! 👋</Text>
+            <Text style={styles.date}>{new Date().toLocaleDateString()}</Text>
           </View>
-        ))}
-      </View>
-
-      {/* Quick Shortcuts */}
-      <View style={styles.shortcutsSection}>
-        <Text style={styles.sectionTitle}>Quick Actions</Text>
-        <View style={styles.shortcutsGrid}>
-          {shortcuts.map((shortcut, index) => (
-            <Pressable
-              key={index}
-              style={styles.shortcutButton}
-              onPress={shortcut.action}
-            >
-              <Text style={styles.shortcutIcon}>{shortcut.icon}</Text>
-              <Text style={styles.shortcutLabel}>{shortcut.label}</Text>
-            </Pressable>
-          ))}
-        </View>
-      </View>
-
-      {/* Recent Transactions */}
-      <View style={styles.recentSection}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Recent Transactions</Text>
-          <Pressable onPress={() => router.push('/(tabs)/history')}>
-            <Text style={styles.seeAllLink}>See All</Text>
-          </Pressable>
+          <Ionicons name="notifications-outline" size={24} color={COLORS.textSecondary} />
         </View>
 
-        {recentTransactions.length === 0 ? (
-          <View style={styles.emptyStateCard}>
-            <Text style={styles.emptyStateIcon}>📝</Text>
-            <Text style={styles.emptyStateText}>No transactions yet</Text>
-            <Text style={styles.emptyStateSubtext}>Start by adding your first transaction</Text>
-            <Pressable style={styles.emptyStateButton} onPress={() => router.push('/(tabs)/add')}>
-              <Text style={styles.emptyStateButtonText}>Add Transaction</Text>
-            </Pressable>
-          </View>
-        ) : (
-          recentTransactions.map(transaction => (
-            <View key={transaction.id} style={styles.transactionItem}>
-              <View style={styles.transactionInfo}>
-                <Text style={styles.transactionEmoji}>
-                  {getCategoryEmoji(transaction.category)}
-                </Text>
-                <View>
-                  <Text style={styles.transactionName}>{transaction.description}</Text>
-                  <Text style={styles.transactionTime}>
-                    {new Date(transaction.date).toLocaleTimeString('en-IN', {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </Text>
-                </View>
+        {/* Budget & Goal Summaries */}
+        <View style={{ marginBottom: SPACING.lg }}>
+          <Card style={{ padding: SPACING.md, marginBottom: SPACING.md }}>
+            <Text style={styles.sectionTitle}>Budget Overview</Text>
+            <Text style={styles.smallText}>
+              {budgetStats.totalLimit > 0
+                ? `${Math.round(budgetStats.percentageUsed)}% of ${formatCurrency(budgetStats.totalLimit)} used`
+                : 'No budget set for this month'}
+            </Text>
+            {budgetStats.totalLimit > 0 && (
+              <View style={styles.progressTrack}>
+                <View style={[styles.progressFill, { width: `${Math.min(100, Math.round(budgetStats.percentageUsed))}%`, backgroundColor: budgetStats.status === 'exceeded' ? COLORS.dangerRed : budgetStats.status === 'warning' ? COLORS.warningOrange : COLORS.successGreen }]} />
               </View>
-              <Text
-                style={[
-                  styles.transactionAmount,
-                  transaction.type === 'income' ? styles.incomeText : styles.expenseText,
-                ]}
-              >
-                {transaction.type === 'income' ? '+' : '-'}₹{transaction.amount.toFixed(2)}
-              </Text>
+            )}
+          </Card>
+
+          <Card style={{ padding: SPACING.md }}>
+            <Text style={styles.sectionTitle}>Primary Goal</Text>
+            {primaryGoalStats ? (
+              <>
+                <Text style={styles.smallText}>{primaryGoalStats.goal.title}</Text>
+                <Text style={styles.smallText}>{Math.round(primaryGoalStats.percentageComplete)}% complete</Text>
+                <View style={styles.progressTrack}>
+                  <View style={[styles.progressFill, { width: `${Math.min(100, Math.round(primaryGoalStats.percentageComplete))}%`, backgroundColor: COLORS.purpleMain }]} />
+                </View>
+              </>
+            ) : (
+              <Text style={styles.smallText}>No active savings goals. Create one to get started.</Text>
+            )}
+          </Card>
+        </View>
+
+        {/* Balance Card */}
+        <LinearGradient
+          colors={[COLORS.purpleMain, COLORS.purpleLight]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[styles.balanceCard, SHADOWS.soft]}
+        >
+          <Text style={styles.balanceLabel}>Total Balance</Text>
+          <Text style={styles.balanceAmount}>{formatCurrency(balance)}</Text>
+
+          <View style={styles.balanceStats}>
+            <View style={styles.statItem}>
+              <Text style={styles.statLabel}>Income</Text>
+              <Text style={styles.statAmount}>{formatCurrency(monthlyIncome)}</Text>
             </View>
-          ))
+            <View style={styles.divider} />
+            <View style={styles.statItem}>
+              <Text style={styles.statLabel}>Expense</Text>
+              <Text style={styles.statAmount}>{formatCurrency(monthlyExpense)}</Text>
+            </View>
+          </View>
+        </LinearGradient>
+
+        {/* Quick Actions */}
+        <View style={styles.quickActions}>
+          <QuickActionButton
+            icon="add-circle-outline"
+            label="Add Transaction"
+            onPress={handleAddTransaction}
+          />
+          <QuickActionButton
+            icon="bar-chart"
+            label="Analytics"
+            onPress={handleAnalytics}
+          />
+          <QuickActionButton
+            icon="wallet-outline"
+            label="Budget"
+            onPress={handleBudget}
+          />
+        </View>
+
+        {/* Recent Transactions */}
+        {recentTransactions.length > 0 && (
+          <View style={styles.recentSection}>
+            <Text style={styles.sectionTitle}>Recent Transactions</Text>
+            {recentTransactions.map((transaction) => {
+              const isIncome = transaction.type === 'income';
+              return (
+                <Card key={transaction.id} style={styles.transactionItem}>
+                  <TransactionItem
+                    icon={isIncome ? 'wallet-outline' : 'card-outline'}
+                    title={transaction.category}
+                    subtitle={transaction.date}
+                    amount={formatCurrency(transaction.amount)}
+                    isExpense={!isIncome}
+                    onEdit={() => router.push(`/add-transaction?id=${transaction.id}` as any)}
+                  />
+                </Card>
+              );
+            })}
+          </View>
         )}
-      </View>
 
-      {/* Info Section */}
-      <View style={styles.infoCard}>
-        <Text style={styles.infoTitle}>💡 Pro Tips</Text>
-        <Text style={styles.infoText}>
-          • Track every transaction to get accurate insights{'\n'}
-          • Use categories to understand spending patterns{'\n'}
-          • Check analytics regularly to optimize your budget
-        </Text>
-      </View>
+        {/* Empty State */}
+        {recentTransactions.length === 0 && (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyStateEmoji}>📊</Text>
+            <Text style={styles.emptyStateText}>No transactions yet</Text>
+            <Text style={styles.emptyStateSubtext}>
+              Add your first transaction to get started
+            </Text>
+          </View>
+        )}
+      </ScrollView>
 
-      <View style={styles.spacer} />
-    </ScrollView>
+      {/* Footer Navigation */}
+      <FooterNavigation activeTab="home" />
+    </View>
   );
 }
 
-function getCategoryEmoji(category: string): string {
-  const emojis: Record<string, string> = {
-    food: '🍔',
-    transport: '🚗',
-    entertainment: '🎬',
-    shopping: '🛍️',
-    utilities: '💡',
-    health: '🏥',
-    salary: '💵',
-    investment: '📈',
-    other: '📌',
-  };
-  return emojis[category] || '📌';
+interface QuickActionButtonProps {
+  icon: string;
+  label: string;
+  onPress: () => void;
 }
+
+const QuickActionButton: React.FC<QuickActionButtonProps> = ({
+  icon,
+  label,
+  onPress,
+}) => {
+  return (
+    <TouchableOpacity activeOpacity={0.7} onPress={onPress} style={styles.actionButton}>
+      <View style={styles.actionIconContainer}>
+        <Ionicons name={icon as any} size={24} color={COLORS.purpleMain} />
+      </View>
+      <Text style={styles.actionLabel}>{label}</Text>
+    </TouchableOpacity>
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: COLORS.bgLight,
+  },
+  scrollContent: {
+    paddingHorizontal: PADDING.horizontal,
+    paddingVertical: SPACING.lg,
+    paddingBottom: 100,
   },
   header: {
-    paddingHorizontal: 16,
-    paddingTop: 20,
-    paddingBottom: 16,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: SPACING.lg,
   },
   greeting: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 4,
+    ...TYPOGRAPHY.styles.screenTitle,
+    color: COLORS.textPrimary,
+    marginBottom: SPACING.sm,
   },
   date: {
-    fontSize: 14,
-    color: '#999',
+    ...TYPOGRAPHY.styles.small,
+    color: COLORS.textSecondary,
   },
-  statsContainer: {
+  balanceCard: {
+    borderRadius: BORDER_RADIUS.card,
+    padding: SPACING.lg,
+    marginBottom: SPACING.lg,
+  },
+  balanceLabel: {
+    ...TYPOGRAPHY.styles.small,
+    color: COLORS.cardBg,
+    opacity: 0.9,
+    marginBottom: SPACING.sm,
+  },
+  balanceAmount: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: COLORS.cardBg,
+    marginBottom: SPACING.lg,
+  },
+  balanceStats: {
     flexDirection: 'row',
-    paddingHorizontal: 12,
-    paddingVertical: 16,
-    gap: 10,
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  statCard: {
+  statItem: {
     flex: 1,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 12,
-    borderLeftWidth: 4,
-    boxShadow: '0px 2px 4px rgba(0,0,0,0.1)',
-    elevation: 2,
-  },
-  statIcon: {
-    fontSize: 24,
-    marginBottom: 8,
   },
   statLabel: {
-    fontSize: 12,
-    color: '#999',
-    marginBottom: 4,
+    ...TYPOGRAPHY.styles.small,
+    color: COLORS.cardBg,
+    opacity: 0.8,
+    marginBottom: SPACING.sm,
   },
-  statValue: {
-    fontSize: 16,
-    fontWeight: 'bold',
+  statAmount: {
+    ...TYPOGRAPHY.styles.body,
+    color: COLORS.cardBg,
+    fontWeight: '700',
   },
-  shortcutsSection: {
-    paddingHorizontal: 16,
-    marginBottom: 20,
+  divider: {
+    width: 1,
+    height: 30,
+    backgroundColor: COLORS.cardBg,
+    opacity: 0.3,
   },
-  shortcutsGrid: {
+  quickActions: {
     flexDirection: 'row',
-    gap: 12,
-    marginTop: 12,
+    justifyContent: 'space-between',
+    marginBottom: SPACING.xl,
   },
-  shortcutButton: {
-    flex: 1,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    paddingVertical: 16,
+  actionButton: {
     alignItems: 'center',
+    flex: 1,
+  },
+  actionIconContainer: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: COLORS.bgLight,
     justifyContent: 'center',
-    boxShadow: '0px 2px 4px rgba(0,0,0,0.1)',
-    elevation: 2,
+    alignItems: 'center',
+    marginBottom: SPACING.sm,
+    ...SHADOWS.soft,
   },
-  shortcutIcon: {
-    fontSize: 28,
-    marginBottom: 8,
-  },
-  shortcutLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#333',
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
+  actionLabel: {
+    ...TYPOGRAPHY.styles.small,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
   },
   recentSection: {
-    paddingHorizontal: 16,
-    marginBottom: 20,
+    marginTop: SPACING.lg,
   },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  seeAllLink: {
-    fontSize: 14,
-    color: '#2196F3',
-    fontWeight: '600',
-  },
-  emptyStateCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    paddingVertical: 32,
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  emptyStateIcon: {
-    fontSize: 48,
-    marginBottom: 12,
-  },
-  emptyStateText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 4,
-  },
-  emptyStateSubtext: {
-    fontSize: 14,
-    color: '#999',
-    marginBottom: 16,
-  },
-  emptyStateButton: {
-    backgroundColor: '#4CAF50',
-    paddingHorizontal: 24,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  emptyStateButtonText: {
-    color: '#fff',
-    fontWeight: '600',
+  sectionTitle: {
+    ...TYPOGRAPHY.styles.sectionTitle,
+    color: COLORS.textPrimary,
+    marginBottom: SPACING.md,
   },
   transactionItem: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 10,
+    marginBottom: SPACING.md,
+    padding: SPACING.md,
+  },
+  transactionContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    boxShadow: '0px 1px 2px rgba(0,0,0,0.08)',
-    elevation: 1,
   },
-  transactionInfo: {
+  transactionLeft: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    flex: 1,
   },
-  transactionEmoji: {
-    fontSize: 24,
+  categoryIcon: {
+    width: 45,
+    height: 45,
+    borderRadius: 22.5,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: SPACING.md,
   },
-  transactionName: {
-    fontSize: 14,
+  categoryIconText: {
+    fontSize: 20,
+  },
+  transactionCategory: {
+    ...TYPOGRAPHY.styles.body,
+    color: COLORS.textPrimary,
     fontWeight: '600',
-    color: '#333',
-    textTransform: 'capitalize',
+    marginBottom: SPACING.xs,
   },
-  transactionTime: {
-    fontSize: 12,
-    color: '#999',
-    marginTop: 2,
+  transactionDate: {
+    ...TYPOGRAPHY.styles.small,
+    color: COLORS.textSecondary,
   },
   transactionAmount: {
-    fontSize: 14,
-    fontWeight: 'bold',
+    ...TYPOGRAPHY.styles.body,
+    fontWeight: '700',
   },
-  incomeText: {
-    color: '#4CAF50',
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: SPACING.xl,
   },
-  expenseText: {
-    color: '#f44336',
+  emptyStateEmoji: {
+    fontSize: 48,
+    marginBottom: SPACING.md,
   },
-  infoCard: {
-    marginHorizontal: 16,
-    backgroundColor: '#E3F2FD',
-    borderLeftWidth: 4,
-    borderLeftColor: '#2196F3',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    marginBottom: 20,
+  emptyStateText: {
+    ...TYPOGRAPHY.styles.body,
+    color: COLORS.textPrimary,
+    fontWeight: '600',
+    marginBottom: SPACING.sm,
   },
-  infoTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#2196F3',
-    marginBottom: 8,
+  emptyStateSubtext: {
+    ...TYPOGRAPHY.styles.small,
+    color: COLORS.textSecondary,
   },
-  infoText: {
-    fontSize: 12,
-    color: '#1976D2',
-    lineHeight: 18,
+  smallText: {
+    ...TYPOGRAPHY.styles.small,
+    color: COLORS.textSecondary,
+    marginBottom: SPACING.sm,
   },
-  spacer: {
-    height: 40,
+  progressTrack: {
+    height: 8,
+    width: '100%',
+    backgroundColor: COLORS.cardBg,
+    borderRadius: 8,
+    overflow: 'hidden',
+    marginTop: SPACING.sm,
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 8,
   },
 });

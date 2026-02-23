@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, FlatList } from 'react-native';
+import { View, Text, StyleSheet, Pressable, FlatList } from 'react-native';
 import { useTransactions } from '@/lib/context/TransactionContext';
-import type { Category } from '@/lib/types/transaction';
+import { COLORS, SPACING, SHADOWS } from '@/lib/theme';
+import type { Category, Transaction } from '@/lib/types/transaction';
+import { Ionicons } from '@expo/vector-icons';
 
-const CATEGORY_ICONS: Record<Category, string> = {
+const CATEGORY_ICONS: Record<string, string> = {
   food: '🍔',
   transport: '🚗',
   entertainment: '🎬',
@@ -15,7 +17,7 @@ const CATEGORY_ICONS: Record<Category, string> = {
   other: '📌',
 };
 
-export default function HistoryScreen() {
+export default function TransactionHistoryScreen() {
   const { transactions, deleteTransaction } = useTransactions();
   const [filterType, setFilterType] = useState<'all' | 'income' | 'expense'>('all');
 
@@ -25,25 +27,34 @@ export default function HistoryScreen() {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-IN', { 
-      day: '2-digit', 
-      month: 'short', 
-      year: '2-digit',
+    return date.toLocaleDateString('en-IN', {
+      month: 'short',
+      day: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
     });
   };
 
-  const renderTransaction = ({ item }: any) => (
-    <Pressable 
-      style={styles.transactionCard}
+  const renderTransaction = ({ item }: { item: Transaction }) => (
+    <Pressable
+      style={[
+        styles.transactionCard,
+        {
+          borderLeftColor:
+            item.type === 'income'
+              ? COLORS.successGreen
+              : COLORS.dangerRed,
+        },
+      ]}
       onLongPress={() => deleteTransaction(item.id)}
     >
       <View style={styles.transactionLeft}>
-        <Text style={styles.categoryIcon}>
-          {CATEGORY_ICONS[item.category]}
-        </Text>
-        <View>
+        <View style={styles.iconCircle}>
+          <Text style={styles.categoryIcon}>
+            {CATEGORY_ICONS[item.category as string]}
+          </Text>
+        </View>
+        <View style={styles.transactionInfo}>
           <Text style={styles.transactionDescription}>{item.description}</Text>
           <Text style={styles.transactionDate}>{formatDate(item.date)}</Text>
         </View>
@@ -51,39 +62,72 @@ export default function HistoryScreen() {
       <Text
         style={[
           styles.transactionAmount,
-          item.type === 'income' ? styles.incomeAmount : styles.expenseAmount,
+          {
+            color:
+              item.type === 'income'
+                ? COLORS.successGreen
+                : COLORS.dangerRed,
+          },
         ]}
       >
-        {item.type === 'income' ? '+' : '-'}₹{item.amount.toFixed(2)}
+        {item.type === 'income' ? '+' : '-'}${item.amount.toFixed(2)}
       </Text>
     </Pressable>
   );
 
   return (
     <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Transaction History</Text>
+      </View>
+
       {/* Filter Buttons */}
       <View style={styles.filterContainer}>
         <Pressable
-          style={[styles.filterButton, filterType === 'all' && styles.filterActive]}
+          style={[
+            styles.filterButton,
+            filterType === 'all' && styles.filterActive,
+          ]}
           onPress={() => setFilterType('all')}
         >
-          <Text style={[styles.filterText, filterType === 'all' && styles.filterTextActive]}>
+          <Text
+            style={[
+              styles.filterText,
+              filterType === 'all' && styles.filterTextActive,
+            ]}
+          >
             All
           </Text>
         </Pressable>
         <Pressable
-          style={[styles.filterButton, filterType === 'income' && styles.filterActive]}
+          style={[
+            styles.filterButton,
+            filterType === 'income' && styles.filterActive,
+          ]}
           onPress={() => setFilterType('income')}
         >
-          <Text style={[styles.filterText, filterType === 'income' && styles.filterTextActive]}>
+          <Text
+            style={[
+              styles.filterText,
+              filterType === 'income' && styles.filterTextActive,
+            ]}
+          >
             Income
           </Text>
         </Pressable>
         <Pressable
-          style={[styles.filterButton, filterType === 'expense' && styles.filterActive]}
+          style={[
+            styles.filterButton,
+            filterType === 'expense' && styles.filterActive,
+          ]}
           onPress={() => setFilterType('expense')}
         >
-          <Text style={[styles.filterText, filterType === 'expense' && styles.filterTextActive]}>
+          <Text
+            style={[
+              styles.filterText,
+              filterType === 'expense' && styles.filterTextActive,
+            ]}
+          >
             Expense
           </Text>
         </Pressable>
@@ -92,20 +136,21 @@ export default function HistoryScreen() {
       {/* Transactions List */}
       {filteredTransactions.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>📝 No transactions yet</Text>
-          <Text style={styles.emptySubText}>Start by adding your first transaction!</Text>
+          <Ionicons name="receipt" size={48} color={COLORS.textSecondary} />
+          <Text style={styles.emptyText}>No transactions</Text>
+          <Text style={styles.emptySubText}>
+            Tap to add your first transaction
+          </Text>
         </View>
       ) : (
         <FlatList
-          data={filteredTransactions}
+          data={filteredTransactions as any[]}
           renderItem={renderTransaction}
           keyExtractor={item => item.id}
           scrollEnabled={true}
           contentContainerStyle={styles.listContent}
         />
       )}
-
-      <Text style={styles.hint}>💡 Long press on a transaction to delete it</Text>
     </View>
   );
 }
@@ -113,101 +158,114 @@ export default function HistoryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: COLORS.bgLight,
+  },
+  header: {
+    paddingHorizontal: SPACING.md,
+    paddingTop: SPACING.md,
+    paddingBottom: SPACING.lg,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+    marginBottom: SPACING.lg,
   },
   filterContainer: {
     flexDirection: 'row',
-    padding: 16,
-    gap: 8,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    gap: SPACING.sm,
+    marginBottom: SPACING.lg,
+    paddingHorizontal: SPACING.md,
   },
   filterButton: {
     flex: 1,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    backgroundColor: '#f0f0f0',
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.md,
+    borderRadius: 12,
+    backgroundColor: COLORS.cardBg,
     alignItems: 'center',
+    ...SHADOWS.soft,
   },
   filterActive: {
-    backgroundColor: '#2196F3',
+    backgroundColor: COLORS.purpleMain,
   },
   filterText: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#666',
+    color: COLORS.textSecondary,
   },
   filterTextActive: {
-    color: '#fff',
+    color: '#FFFFFF',
+    fontWeight: '600',
   },
   listContent: {
-    padding: 12,
+    paddingHorizontal: SPACING.md,
+    paddingTop: 0,
+    paddingBottom: SPACING.xl,
   },
   transactionCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
+    backgroundColor: COLORS.cardBg,
+    borderRadius: 18,
+    padding: SPACING.md,
+    marginBottom: SPACING.sm,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     borderLeftWidth: 4,
-    borderLeftColor: '#2196F3',
-    boxShadow: '0px 2px 4px rgba(0,0,0,0.1)',
-    elevation: 3,
+    ...SHADOWS.soft,
   },
   transactionLeft: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: SPACING.md,
+  },
+  iconCircle: {
+    width: 45,
+    height: 45,
+    borderRadius: 22.5,
+    backgroundColor: '#EEF0F6',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   categoryIcon: {
-    fontSize: 28,
+    fontSize: 20,
+  },
+  transactionInfo: {
+    flex: 1,
   },
   transactionDescription: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
-    color: '#333',
+    color: COLORS.textPrimary,
+    marginBottom: SPACING.xs,
     textTransform: 'capitalize',
   },
   transactionDate: {
     fontSize: 12,
-    color: '#999',
-    marginTop: 4,
+    color: COLORS.textSecondary,
   },
   transactionAmount: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  incomeAmount: {
-    color: '#4CAF50',
-  },
-  expenseAmount: {
-    color: '#f44336',
+    fontSize: 14,
+    fontWeight: '600',
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: SPACING.lg,
+    marginTop: SPACING.xl,
   },
   emptyText: {
-    fontSize: 24,
-    marginBottom: 8,
+    fontSize: 18,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+    marginTop: SPACING.md,
+    marginBottom: SPACING.sm,
   },
   emptySubText: {
     fontSize: 14,
-    color: '#999',
-  },
-  hint: {
+    color: COLORS.textSecondary,
     textAlign: 'center',
-    color: '#999',
-    fontSize: 12,
-    paddingVertical: 12,
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
   },
 });

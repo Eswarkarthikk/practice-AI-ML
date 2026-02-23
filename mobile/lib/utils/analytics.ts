@@ -1,12 +1,13 @@
-import { Transaction, Category } from '../types/transaction';
+import { Transaction } from '../types/transaction';
 
 export interface Analytics {
   totalIncome: number;
   totalExpense: number;
   balance: number;
-  categoryBreakdown: Record<Category, number>;
+  // keys are category ids/names
+  categoryBreakdown: Record<string, number>;
   dailyAverage: number;
-  highestSpendingCategory: Category | null;
+  highestSpendingCategory: string | null;
   transactionCount: number;
   monthlyTrend: { month: string; expense: number; income: number }[];
 }
@@ -17,7 +18,7 @@ export const calculateAnalytics = (transactions: Transaction[]): Analytics => {
       totalIncome: 0,
       totalExpense: 0,
       balance: 0,
-      categoryBreakdown: {} as Record<Category, number>,
+      categoryBreakdown: {} as Record<string, number>,
       dailyAverage: 0,
       highestSpendingCategory: null,
       transactionCount: 0,
@@ -36,12 +37,13 @@ export const calculateAnalytics = (transactions: Transaction[]): Analytics => {
   const categoryBreakdown = transactions
     .filter(t => t.type === 'expense')
     .reduce((acc, t) => {
-      acc[t.category] = (acc[t.category] || 0) + t.amount;
+      const key = String(t.category);
+      acc[key] = (acc[key] || 0) + t.amount;
       return acc;
-    }, {} as Record<Category, number>);
+    }, {} as Record<string, number>);
 
   const highestSpendingCategory = Object.entries(categoryBreakdown)
-    .sort(([, a], [, b]) => b - a)[0]?.[0] as Category | null;
+    .sort(([, a], [, b]) => b - a)[0]?.[0] || null;
 
   // Calculate daily average
   const daysSpan = transactions.length > 0
@@ -91,7 +93,8 @@ export const generateAIInsights = (analytics: Analytics, transactions: Transacti
   }
 
   if (analytics.highestSpendingCategory) {
-    insights.push(`📊 Your highest spending category is ${analytics.highestSpendingCategory} (₹${analytics.categoryBreakdown[analytics.highestSpendingCategory].toFixed(2)})`);
+    const cat = analytics.highestSpendingCategory;
+    insights.push(`📊 Your highest spending category is ${cat} (₹${(analytics.categoryBreakdown[cat] || 0).toFixed(2)})`);
   }
 
   if (analytics.dailyAverage > 0) {
@@ -106,7 +109,7 @@ export const generateAIInsights = (analytics: Analytics, transactions: Transacti
     insights.push(`🔥 You made ${lastWeekTransactions.length} transactions this week!`);
   }
 
-  if (analytics.categoryBreakdown['food'] && analytics.categoryBreakdown['food'] > analytics.totalExpense * 0.3) {
+  if ((analytics.categoryBreakdown['food'] || 0) > analytics.totalExpense * 0.3) {
     insights.push(`🍔 Food spending is high! Consider meal planning to save money.`);
   }
 
