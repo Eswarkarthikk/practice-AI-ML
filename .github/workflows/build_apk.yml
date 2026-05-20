@@ -35,11 +35,6 @@ jobs:
           cd flutter
           flutter pub get
 
-      - name: Generate Launcher Icons
-        run: |
-          cd flutter
-          flutter pub run flutter_launcher_icons
-
       - name: Build Release APK
         run: |
           cd flutter
