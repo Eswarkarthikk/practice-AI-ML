@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../models/app_state.dart';
 import '../models/transaction.dart';
 import '../theme/app_theme.dart';
+import '../theme/responsive.dart';
 import '../widgets/finance_scaffold.dart';
 
 class CartScreen extends StatefulWidget {
@@ -71,241 +73,247 @@ class _CartScreenState extends State<CartScreen> {
 
     return Scaffold(
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 24, 20, 110),
-          children: [
-            Row(
-              children: [
-                const Expanded(
-                  child: SplitTitle(
-                    first: 'Smart ',
-                    second: 'Cart',
-                    color: Color(0xFFFF5B7F),
-                    size: 31,
-                  ),
-                ),
-                IconButton.filled(
-                  style: IconButton.styleFrom(
-                    backgroundColor: AppColors.darkCard,
-                    foregroundColor: AppColors.textPrimary,
-                  ),
-                  onPressed: () => Navigator.of(context).maybePop(),
-                  icon: const Icon(Icons.close),
-                )
-              ],
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Add items, compare with budget, then save it as one expense.',
-              style: TextStyle(
-                  color: AppColors.textSecondary,
-                  fontFamily: 'monospace',
-                  height: 1.35),
-            ),
-            const SizedBox(height: 22),
-            FinanceCard(
-              padding: const EdgeInsets.all(22),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        child: Responsive.constrained(
+          context,
+          ListView(
+            padding: EdgeInsets.fromLTRB(20.r(context), 24.r(context), 20.r(context), 110.r(context)),
+            children: [
+              Row(
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Budget Indicator',
-                          style: TextStyle(
-                              fontSize: 22, fontWeight: FontWeight.w900)),
-                      Icon(Icons.pie_chart_outline, color: statusColor),
-                    ],
+                  Expanded(
+                    child: SplitTitle(
+                      first: 'Smart ',
+                      second: 'Cart',
+                      color: const Color(0xFFFF5B7F),
+                      size: 31.r(context),
+                    ),
                   ),
-                  const SizedBox(height: 22),
-                  Row(
-                    children: [
-                      Expanded(
-                          child: _Metric(
-                              label: 'Budget',
-                              value: _budget > 0
-                                  ? appState.formatCurrency(_budget)
-                                  : 'Not set')),
-                      Expanded(
-                          child: _Metric(
-                              label: 'Current',
-                              value: appState.formatCurrency(_cartTotal))),
-                      Expanded(
-                          child: _Metric(
-                              label: 'Remaining',
-                              value: _budgetDifference(appState))),
-                    ],
-                  ),
-                  const SizedBox(height: 18),
-                  FinanceTextField(
-                    controller: _budgetController,
-                    label: 'Set cart budget',
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    onChanged: (_) => setState(() {}),
-                  ),
+                  IconButton.filled(
+                    style: IconButton.styleFrom(
+                      backgroundColor: AppColors.darkCard,
+                      foregroundColor: AppColors.textPrimary,
+                    ),
+                    onPressed: () => Navigator.of(context).maybePop(),
+                    icon: Icon(Icons.close, size: 24.r(context)),
+                  )
                 ],
               ),
-            ),
-            const SizedBox(height: 18),
-            Row(
-              children: [
-                Expanded(
-                  child: FinanceSelectField<String>(
-                    label: 'Pay from',
-                    value: _selectedSourceId,
-                    items: appState.sources
-                        .map((source) => DropdownMenuItem(
-                            value: source.id, child: Text(source.name)))
-                        .toList(),
-                    onChanged: (value) =>
-                        setState(() => _selectedSourceId = value),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: FinanceCard(
-                    padding: const EdgeInsets.all(16),
-                    onTap: _pickDate,
-                    child: Row(
+              SizedBox(height: 8.r(context)),
+              Text(
+                'Add items, compare with budget, then save it as one expense.',
+                style: GoogleFonts.spaceMono(
+                    color: AppColors.textSecondary,
+                    fontSize: 12.r(context),
+                    height: 1.35),
+              ),
+              SizedBox(height: 22.r(context)),
+              FinanceCard(
+                padding: EdgeInsets.all(22.r(context)),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Expanded(
-                            child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                              const Text('Checkout date',
-                                  style: TextStyle(
-                                      color: AppColors.textSecondary,
-                                      fontFamily: 'monospace')),
-                              const SizedBox(height: 10),
-                              Text(DateFormat('yyyy-MM-dd').format(_date),
-                                  style: const TextStyle(
-                                      fontSize: 17,
-                                      fontWeight: FontWeight.w900)),
-                            ])),
-                        const Icon(Icons.calendar_month_outlined,
-                            color: AppColors.textSecondary),
+                        Text('Budget Indicator',
+                            style: TextStyle(
+                                fontSize: 22.r(context), fontWeight: FontWeight.w900)),
+                        Icon(Icons.pie_chart_outline, color: statusColor, size: 24.r(context)),
                       ],
                     ),
-                  ),
-                )
-              ],
-            ),
-            const SizedBox(height: 24),
-            const Text('Cart Items',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900)),
-            const SizedBox(height: 12),
-            FinanceCard(
-              padding: const EdgeInsets.all(18),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Add item',
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
-                  const SizedBox(height: 16),
-                  FinanceTextField(controller: _nameController, label: 'Name'),
-                  const SizedBox(height: 12),
-                  Row(children: [
-                    Expanded(
-                        child: FinanceTextField(
-                            controller: _priceController,
-                            label: 'Price',
-                            keyboardType: TextInputType.number)),
-                    const SizedBox(width: 10),
-                    Expanded(
-                        child: FinanceTextField(
-                            controller: _quantityController,
-                            label: 'Qty',
-                            keyboardType: TextInputType.number)),
-                  ]),
-                  const SizedBox(height: 12),
-                  Row(children: [
-                    Expanded(
-                        child: FinanceTextField(
-                            controller: _discountController,
-                            label: 'Discount %',
-                            keyboardType: TextInputType.number)),
-                    const SizedBox(width: 10),
-                    Expanded(
-                        child: FinanceTextField(
-                            controller: _couponValueController,
-                            label: 'Coupon value',
-                            keyboardType: TextInputType.number)),
-                    const SizedBox(width: 10),
-                    Expanded(
-                        child: FinanceTextField(
-                            controller: _couponCountController,
-                            label: 'Coupon count',
-                            keyboardType: TextInputType.number)),
-                  ]),
-                  const SizedBox(height: 20),
-                  GradientActionButton(label: 'Add Item', onPressed: _addItem),
-                ],
-              ),
-            ),
-            const SizedBox(height: 28),
-            if (_items.isEmpty)
-              const EmptyFinanceState(
-                icon: Icons.shopping_cart_outlined,
-                title: 'No items yet',
-                message:
-                    'Start with an item, then adjust quantity, discounts, and coupons live.',
-              )
-            else
-              ..._items.map((item) => _CartItemCard(
-                    item: item,
-                    total: appState.formatCurrency(item.total),
-                    onRemove: () => setState(() =>
-                        _items.removeWhere((entry) => entry.id == item.id)),
-                  )),
-            const SizedBox(height: 14),
-            FinanceCard(
-              padding: const EdgeInsets.all(18),
-              child: Column(
-                children: [
-                  _CheckoutRow(
-                      label: 'Live Total',
-                      value: appState.formatCurrency(_cartTotal)),
-                  const SizedBox(height: 12),
-                  _CheckoutRow(
-                      label: 'Status',
-                      value: _statusLabel(_budgetStatus),
-                      color: statusColor),
-                  const SizedBox(height: 18),
-                  GradientActionButton(
-                    onPressed:
-                        _items.isEmpty ? null : () => _checkout(appState),
-                    label: 'Checkout and Save as Expense',
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 28),
-            const Text('Cart History',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900)),
-            const SizedBox(height: 12),
-            if (history.isEmpty)
-              const EmptyFinanceState(
-                icon: Icons.history,
-                title: 'No cart history yet',
-                message:
-                    'Your checked out carts will appear here with expandable details.',
-              )
-            else
-              ...history.map((transaction) => FinanceCard(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    child: ListTile(
-                      title: const Text('Shopping Cart',
-                          style: TextStyle(fontWeight: FontWeight.w900)),
-                      subtitle: Text(
-                          '${transaction.date} | ${transaction.cartSnapshot!.itemCount} items'),
-                      trailing: Text(
-                          appState.formatCurrency(transaction.amount),
-                          style: const TextStyle(fontWeight: FontWeight.w900)),
+                    SizedBox(height: 22.r(context)),
+                    Row(
+                      children: [
+                        Expanded(
+                            child: _Metric(
+                                label: 'Budget',
+                                value: _budget > 0
+                                    ? appState.formatCurrency(_budget)
+                                    : 'Not set')),
+                        Expanded(
+                            child: _Metric(
+                                label: 'Current',
+                                value: appState.formatCurrency(_cartTotal))),
+                        Expanded(
+                            child: _Metric(
+                                label: 'Remaining',
+                                value: _budgetDifference(appState))),
+                      ],
                     ),
-                  )),
-          ],
+                    SizedBox(height: 18.r(context)),
+                    FinanceTextField(
+                      controller: _budgetController,
+                      label: 'Set cart budget',
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      onChanged: (_) => setState(() {}),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 18.r(context)),
+              Row(
+                children: [
+                  Expanded(
+                    child: FinanceSelectField<String>(
+                      label: 'Pay from',
+                      value: _selectedSourceId,
+                      items: appState.sources
+                          .map((source) => DropdownMenuItem(
+                              value: source.id, child: Text(source.name)))
+                          .toList(),
+                      onChanged: (value) =>
+                          setState(() => _selectedSourceId = value),
+                    ),
+                  ),
+                  SizedBox(width: 12.r(context)),
+                  Expanded(
+                    child: FinanceCard(
+                      padding: EdgeInsets.all(16.r(context)),
+                      onTap: _pickDate,
+                      child: Row(
+                        children: [
+                          Expanded(
+                              child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                Text('Checkout date',
+                                    style: GoogleFonts.spaceMono(
+                                        color: AppColors.textSecondary,
+                                        fontSize: 11.r(context))),
+                                SizedBox(height: 10.r(context)),
+                                Text(DateFormat('yyyy-MM-dd').format(_date),
+                                    style: TextStyle(
+                                        fontSize: 17.r(context),
+                                        fontWeight: FontWeight.w900)),
+                              ])),
+                          Icon(Icons.calendar_month_outlined,
+                              color: AppColors.textSecondary,
+                              size: 24.r(context)),
+                        ],
+                      ),
+                    ),
+                  )
+                ],
+              ),
+              SizedBox(height: 24.r(context)),
+              Text('Cart Items',
+                  style: TextStyle(fontSize: 24.r(context), fontWeight: FontWeight.w900)),
+              SizedBox(height: 12.r(context)),
+              FinanceCard(
+                padding: EdgeInsets.all(18.r(context)),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Add item',
+                        style:
+                            TextStyle(fontSize: 18.r(context), fontWeight: FontWeight.w900)),
+                    SizedBox(height: 16.r(context)),
+                    FinanceTextField(controller: _nameController, label: 'Name'),
+                    SizedBox(height: 12.r(context)),
+                    Row(children: [
+                      Expanded(
+                          child: FinanceTextField(
+                              controller: _priceController,
+                              label: 'Price',
+                              keyboardType: TextInputType.number)),
+                      SizedBox(width: 10.r(context)),
+                      Expanded(
+                          child: FinanceTextField(
+                              controller: _quantityController,
+                              label: 'Qty',
+                              keyboardType: TextInputType.number)),
+                    ]),
+                    SizedBox(height: 12.r(context)),
+                    Row(children: [
+                      Expanded(
+                          child: FinanceTextField(
+                              controller: _discountController,
+                              label: 'Discount %',
+                              keyboardType: TextInputType.number)),
+                      SizedBox(width: 10.r(context)),
+                      Expanded(
+                          child: FinanceTextField(
+                              controller: _couponValueController,
+                              label: 'Coupon value',
+                              keyboardType: TextInputType.number)),
+                      SizedBox(width: 10.r(context)),
+                      Expanded(
+                          child: FinanceTextField(
+                              controller: _couponCountController,
+                              label: 'Coupon count',
+                              keyboardType: TextInputType.number)),
+                    ]),
+                    SizedBox(height: 20.r(context)),
+                    GradientActionButton(label: 'Add Item', onPressed: _addItem),
+                  ],
+                ),
+              ),
+              SizedBox(height: 28.r(context)),
+              if (_items.isEmpty)
+                const EmptyFinanceState(
+                  icon: Icons.shopping_cart_outlined,
+                  title: 'No items yet',
+                  message:
+                      'Start with an item, then adjust quantity, discounts, and coupons live.',
+                )
+              else
+                ..._items.map((item) => _CartItemCard(
+                      item: item,
+                      total: appState.formatCurrency(item.total),
+                      onRemove: () => setState(() =>
+                          _items.removeWhere((entry) => entry.id == item.id)),
+                    )),
+              SizedBox(height: 14.r(context)),
+              FinanceCard(
+                padding: EdgeInsets.all(18.r(context)),
+                child: Column(
+                  children: [
+                    _CheckoutRow(
+                        label: 'Live Total',
+                        value: appState.formatCurrency(_cartTotal)),
+                    SizedBox(height: 12.r(context)),
+                    _CheckoutRow(
+                        label: 'Status',
+                        value: _statusLabel(_budgetStatus),
+                        color: statusColor),
+                    SizedBox(height: 18.r(context)),
+                    GradientActionButton(
+                      onPressed:
+                          _items.isEmpty ? null : () => _checkout(appState),
+                      label: 'Checkout and Save as Expense',
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 28.r(context)),
+              Text('Cart History',
+                  style: TextStyle(fontSize: 24.r(context), fontWeight: FontWeight.w900)),
+              SizedBox(height: 12.r(context)),
+              if (history.isEmpty)
+                const EmptyFinanceState(
+                  icon: Icons.history,
+                  title: 'No cart history yet',
+                  message:
+                      'Your checked out carts will appear here with expandable details.',
+                )
+              else
+                ...history.map((transaction) => FinanceCard(
+                      margin: EdgeInsets.only(bottom: 12.r(context)),
+                      child: ListTile(
+                        contentPadding: EdgeInsets.symmetric(horizontal: 16.r(context), vertical: 8.r(context)),
+                        title: Text('Shopping Cart',
+                            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16.r(context))),
+                        subtitle: Text(
+                            '${transaction.date} | ${transaction.cartSnapshot!.itemCount} items',
+                            style: TextStyle(fontSize: 13.r(context))),
+                        trailing: Text(
+                            appState.formatCurrency(transaction.amount),
+                            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16.r(context))),
+                      ),
+                    )),
+            ],
+          ),
         ),
       ),
     );
@@ -405,11 +413,12 @@ class _Metric extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text(label,
-          style: const TextStyle(
-              color: AppColors.textPrimary, fontFamily: 'monospace')),
-      const SizedBox(height: 8),
+          style: GoogleFonts.spaceMono(
+              color: AppColors.textPrimary,
+              fontSize: 12.r(context))),
+      SizedBox(height: 8.r(context)),
       Text(value,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+          style: TextStyle(fontSize: 18.r(context), fontWeight: FontWeight.w800)),
     ]);
   }
 }
@@ -428,23 +437,24 @@ class _CartItemCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FinanceCard(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: EdgeInsets.only(bottom: 12.r(context)),
       child: Row(
         children: [
-          IconButton(onPressed: onRemove, icon: const Icon(Icons.close)),
+          IconButton(onPressed: onRemove, icon: Icon(Icons.close, size: 24.r(context))),
           Expanded(
             child:
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(item.name,
-                  style: const TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.w900)),
+                  style: TextStyle(
+                      fontSize: 18.r(context), fontWeight: FontWeight.w900)),
+              SizedBox(height: 4.r(context)),
               Text('Qty ${item.quantity}',
-                  style: const TextStyle(color: AppColors.textSecondary)),
+                  style: TextStyle(color: AppColors.textSecondary, fontSize: 13.r(context))),
             ]),
           ),
           Text(total,
               style:
-                  const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+                  TextStyle(fontSize: 18.r(context), fontWeight: FontWeight.w900)),
         ],
       ),
     );
@@ -462,11 +472,12 @@ class _CheckoutRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
       Text(label,
-          style: const TextStyle(
-              color: AppColors.textSecondary, fontFamily: 'monospace')),
+          style: GoogleFonts.spaceMono(
+              color: AppColors.textSecondary,
+              fontSize: 13.r(context))),
       Text(value,
           style: TextStyle(
-              fontWeight: FontWeight.w900, fontSize: 18, color: color)),
+              fontWeight: FontWeight.w900, fontSize: 18.r(context), color: color)),
     ]);
   }
 }

@@ -40,6 +40,33 @@ class SourceBalance {
   SourceBalance({required this.source, required this.balance});
 }
 
+class SourceBudget {
+  final double monthBudgetCap;
+  final Map<String, double> limitsByCategory;
+
+  SourceBudget({
+    required this.monthBudgetCap,
+    required this.limitsByCategory,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'monthBudgetCap': monthBudgetCap,
+        'limitsByCategory': limitsByCategory,
+      };
+
+  factory SourceBudget.fromJson(Map<String, dynamic> json) {
+    final limits = <String, double>{};
+    final rawLimits = json['limitsByCategory'] as Map<String, dynamic>? ?? {};
+    rawLimits.forEach((key, val) {
+      limits[key] = (val as num).toDouble();
+    });
+    return SourceBudget(
+      monthBudgetCap: (json['monthBudgetCap'] as num? ?? 0.0).toDouble(),
+      limitsByCategory: limits,
+    );
+  }
+}
+
 class AppStateModel extends ChangeNotifier {
   static const _profileKey = '@ehk_profile';
   static const _transactionsKey = '@ehk_transactions';
@@ -49,6 +76,9 @@ class AppStateModel extends ChangeNotifier {
   static const _themeKey = '@ehk_theme';
   static const _initializedKey = '@ehk_initialized';
   static const _aiApiKeyKey = '@ehk_ai_api_key';
+  static const _appLockEnabledKey = '@ehk_app_lock_enabled';
+  static const _appLockPinKey = '@ehk_app_lock_pin';
+  static const _budgetTrackerKey = '@ehk_budget_tracker';
 
   final List<TransactionModel> _transactions = [];
   final List<SourceModel> _sources = [];
@@ -59,6 +89,11 @@ class AppStateModel extends ChangeNotifier {
   bool _isLoaded = false;
   ThemeMode _themeMode = ThemeMode.dark;
   String? _aiApiKey;
+  bool _appLockEnabled = false;
+  String? _appLockPin;
+  Map<String, SourceBudget> _budgetTracker = {
+    'all': SourceBudget(monthBudgetCap: 0.0, limitsByCategory: {})
+  };
 
   List<TransactionModel> get transactions {
     final sorted = [..._transactions]
@@ -74,6 +109,54 @@ class AppStateModel extends ChangeNotifier {
   bool get isLoaded => _isLoaded;
   ThemeMode get themeMode => _themeMode;
   String? get aiApiKey => _aiApiKey;
+  bool get appLockEnabled => _appLockEnabled;
+  String? get appLockPin => _appLockPin;
+  Map<String, SourceBudget> get budgetTracker => _budgetTracker;
+
+  bool get requiresInitialLockSetup =>
+      _profile != null && _sources.isNotEmpty && (!_appLockEnabled || _appLockPin == null || _appLockPin!.length < 4);
+
+  bool get shouldProtectApp =>
+      _profile != null && _sources.isNotEmpty && _appLockEnabled && _appLockPin != null && _appLockPin!.length >= 4;
+
+  SourceBudget getBudget(String sourceKey) {
+    return _budgetTracker[sourceKey] ??
+        SourceBudget(monthBudgetCap: 0.0, limitsByCategory: {});
+  }
+
+  double getLimit(String sourceKey, String categoryId, double fallback) {
+    final budget = getBudget(sourceKey);
+    return budget.limitsByCategory[categoryId] ?? fallback;
+  }
+
+  Future<void> setCategoryLimit(
+      String sourceKey, String categoryId, double limit) async {
+    final current = getBudget(sourceKey);
+    current.limitsByCategory[categoryId] = limit;
+    _budgetTracker[sourceKey] = current;
+    await _save();
+    notifyListeners();
+  }
+
+  Future<void> setAllBudgetLimits(
+      String sourceKey, double cap, Map<String, double> nextLimits) async {
+    _budgetTracker[sourceKey] =
+        SourceBudget(monthBudgetCap: cap, limitsByCategory: nextLimits);
+    await _save();
+    notifyListeners();
+  }
+
+  Future<void> setAppLockPin(String? pin) async {
+    _appLockPin = pin;
+    await _save();
+    notifyListeners();
+  }
+
+  Future<void> setAppLockEnabled(bool enabled) async {
+    _appLockEnabled = enabled;
+    await _save();
+    notifyListeners();
+  }
 
   Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
@@ -83,6 +166,29 @@ class AppStateModel extends ChangeNotifier {
         : ThemeMode.dark;
     _initialized = prefs.getBool(_initializedKey) ?? false;
     _aiApiKey = prefs.getString(_aiApiKeyKey);
+    _appLockEnabled = prefs.getBool(_appLockEnabledKey) ?? false;
+    _appLockPin = prefs.getString(_appLockPinKey);
+
+    final budgetTrackerRaw = prefs.getString(_budgetTrackerKey);
+    if (budgetTrackerRaw != null) {
+      try {
+        final decoded = jsonDecode(budgetTrackerRaw) as Map<String, dynamic>;
+        final bySource = decoded['bySource'] as Map<String, dynamic>? ?? {};
+        _budgetTracker.clear();
+        bySource.forEach((key, value) {
+          _budgetTracker[key] =
+              SourceBudget.fromJson(value as Map<String, dynamic>);
+        });
+      } catch (_) {
+        _budgetTracker = {
+          'all': SourceBudget(monthBudgetCap: 0.0, limitsByCategory: {})
+        };
+      }
+    } else {
+      _budgetTracker = {
+        'all': SourceBudget(monthBudgetCap: 0.0, limitsByCategory: {})
+      };
+    }
 
     _transactions
       ..clear()
@@ -146,6 +252,17 @@ class AppStateModel extends ChangeNotifier {
     } else {
       await prefs.remove(_aiApiKeyKey);
     }
+    await prefs.setBool(_appLockEnabledKey, _appLockEnabled);
+    if (_appLockPin != null) {
+      await prefs.setString(_appLockPinKey, _appLockPin!);
+    } else {
+      await prefs.remove(_appLockPinKey);
+    }
+    final budgetTrackerPayload = {
+      'bySource': _budgetTracker
+          .map((key, value) => MapEntry(key, value.toJson()))
+    };
+    await prefs.setString(_budgetTrackerKey, jsonEncode(budgetTrackerPayload));
   }
 
   Future<void> setProfile(String name) async {
@@ -242,11 +359,19 @@ class AppStateModel extends ChangeNotifier {
     await prefs.remove(_sourcesKey);
     await prefs.remove(_budgetsKey);
     await prefs.remove(_initializedKey);
+    await prefs.remove(_appLockEnabledKey);
+    await prefs.remove(_appLockPinKey);
+    await prefs.remove(_budgetTrackerKey);
     _profile = null;
     _transactions.clear();
     _sources.clear();
     _budgets.clear();
     _initialized = false;
+    _appLockEnabled = false;
+    _appLockPin = null;
+    _budgetTracker = {
+      'all': SourceBudget(monthBudgetCap: 0.0, limitsByCategory: {})
+    };
     await _save();
     notifyListeners();
   }

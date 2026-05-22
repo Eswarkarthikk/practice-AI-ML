@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AppColors {
   static const darkBg = Color(0xFF0D0F14);
@@ -22,8 +23,11 @@ class AppColors {
 }
 
 class AppTheme {
-  static ThemeData dark() {
-    return ThemeData(
+  static ThemeData dark([BuildContext? context]) {
+    final isTablet = context != null && MediaQuery.of(context).size.width >= 600;
+    final scale = isTablet ? 1.35 : 1.0;
+
+    final base = ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
       scaffoldBackgroundColor: AppColors.darkBg,
@@ -33,31 +37,33 @@ class AppTheme {
         surface: AppColors.darkCard,
         error: AppColors.red,
       ),
-      appBarTheme: const AppBarTheme(
+      appBarTheme: AppBarTheme(
         backgroundColor: AppColors.darkBg,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
         centerTitle: false,
+        titleTextStyle: TextStyle(fontSize: 20 * scale, fontWeight: FontWeight.w900),
       ),
       cardTheme: CardThemeData(
         color: AppColors.darkCard,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(16 * scale),
           side: const BorderSide(color: AppColors.darkBorder),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.darkCard,
-        labelStyle: const TextStyle(color: AppColors.textSecondary),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+        contentPadding: EdgeInsets.symmetric(vertical: 14 * scale, horizontal: 16 * scale),
+        labelStyle: TextStyle(color: AppColors.textSecondary, fontSize: 13 * scale),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14 * scale)),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(14 * scale),
           borderSide: const BorderSide(color: AppColors.darkBorder),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(14 * scale),
           borderSide: const BorderSide(color: AppColors.purple),
         ),
       ),
@@ -71,34 +77,88 @@ class AppTheme {
         style: FilledButton.styleFrom(
           backgroundColor: AppColors.purple,
           foregroundColor: AppColors.darkCard,
-          minimumSize: const Size.fromHeight(50),
+          minimumSize: Size.fromHeight(50 * scale),
           shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-          textStyle: const TextStyle(fontWeight: FontWeight.w800),
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(18 * scale)),
+          textStyle: TextStyle(fontWeight: FontWeight.w800, fontSize: 14 * scale),
         ),
       ),
     );
+
+    final soraTextTheme = GoogleFonts.soraTextTheme(base.textTheme);
+    final scaledTextTheme = soraTextTheme.copyWith(
+      displayLarge: soraTextTheme.displayLarge?.copyWith(fontSize: (soraTextTheme.displayLarge?.fontSize ?? 57) * scale),
+      displayMedium: soraTextTheme.displayMedium?.copyWith(fontSize: (soraTextTheme.displayMedium?.fontSize ?? 45) * scale),
+      displaySmall: soraTextTheme.displaySmall?.copyWith(fontSize: (soraTextTheme.displaySmall?.fontSize ?? 36) * scale),
+      headlineLarge: soraTextTheme.headlineLarge?.copyWith(fontSize: (soraTextTheme.headlineLarge?.fontSize ?? 32) * scale),
+      headlineMedium: soraTextTheme.headlineMedium?.copyWith(fontSize: (soraTextTheme.headlineMedium?.fontSize ?? 28) * scale),
+      headlineSmall: soraTextTheme.headlineSmall?.copyWith(fontSize: (soraTextTheme.headlineSmall?.fontSize ?? 24) * scale),
+      titleLarge: soraTextTheme.titleLarge?.copyWith(fontSize: (soraTextTheme.titleLarge?.fontSize ?? 22) * scale),
+      titleMedium: soraTextTheme.titleMedium?.copyWith(fontSize: (soraTextTheme.titleMedium?.fontSize ?? 16) * scale),
+      titleSmall: soraTextTheme.titleSmall?.copyWith(fontSize: (soraTextTheme.titleSmall?.fontSize ?? 14) * scale),
+      bodyLarge: soraTextTheme.bodyLarge?.copyWith(fontSize: (soraTextTheme.bodyLarge?.fontSize ?? 16) * scale),
+      bodyMedium: soraTextTheme.bodyMedium?.copyWith(fontSize: (soraTextTheme.bodyMedium?.fontSize ?? 14) * scale),
+      bodySmall: soraTextTheme.bodySmall?.copyWith(fontSize: (soraTextTheme.bodySmall?.fontSize ?? 12) * scale),
+      labelLarge: soraTextTheme.labelLarge?.copyWith(fontSize: (soraTextTheme.labelLarge?.fontSize ?? 14) * scale),
+      labelMedium: soraTextTheme.labelMedium?.copyWith(fontSize: (soraTextTheme.labelMedium?.fontSize ?? 12) * scale),
+      labelSmall: soraTextTheme.labelSmall?.copyWith(fontSize: (soraTextTheme.labelSmall?.fontSize ?? 11) * scale),
+    );
+
+    return base.copyWith(
+      textTheme: scaledTextTheme,
+    );
   }
 
-  static ThemeData light() {
+  static ThemeData light([BuildContext? context]) {
+    final isTablet = context != null && MediaQuery.of(context).size.width >= 600;
+    final scale = isTablet ? 1.35 : 1.0;
+
     final base = ThemeData(useMaterial3: true, brightness: Brightness.light);
-    return base.copyWith(
+    final theme = base.copyWith(
       colorScheme: ColorScheme.fromSeed(seedColor: AppColors.purple),
       scaffoldBackgroundColor: AppColors.lightBg,
-      appBarTheme: const AppBarTheme(elevation: 0, centerTitle: false),
+      appBarTheme: AppBarTheme(
+        elevation: 0,
+        centerTitle: false,
+        titleTextStyle: TextStyle(fontSize: 20 * scale, fontWeight: FontWeight.w900),
+      ),
       cardTheme: CardThemeData(
         color: AppColors.lightCard,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(24 * scale),
           side: const BorderSide(color: AppColors.lightBorder),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: Colors.white,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+        contentPadding: EdgeInsets.symmetric(vertical: 14 * scale, horizontal: 16 * scale),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14 * scale)),
       ),
+    );
+
+    final soraTextTheme = GoogleFonts.soraTextTheme(theme.textTheme);
+    final scaledTextTheme = soraTextTheme.copyWith(
+      displayLarge: soraTextTheme.displayLarge?.copyWith(fontSize: (soraTextTheme.displayLarge?.fontSize ?? 57) * scale),
+      displayMedium: soraTextTheme.displayMedium?.copyWith(fontSize: (soraTextTheme.displayMedium?.fontSize ?? 45) * scale),
+      displaySmall: soraTextTheme.displaySmall?.copyWith(fontSize: (soraTextTheme.displaySmall?.fontSize ?? 36) * scale),
+      headlineLarge: soraTextTheme.headlineLarge?.copyWith(fontSize: (soraTextTheme.headlineLarge?.fontSize ?? 32) * scale),
+      headlineMedium: soraTextTheme.headlineMedium?.copyWith(fontSize: (soraTextTheme.headlineMedium?.fontSize ?? 28) * scale),
+      headlineSmall: soraTextTheme.headlineSmall?.copyWith(fontSize: (soraTextTheme.headlineSmall?.fontSize ?? 24) * scale),
+      titleLarge: soraTextTheme.titleLarge?.copyWith(fontSize: (soraTextTheme.titleLarge?.fontSize ?? 22) * scale),
+      titleMedium: soraTextTheme.titleMedium?.copyWith(fontSize: (soraTextTheme.titleMedium?.fontSize ?? 16) * scale),
+      titleSmall: soraTextTheme.titleSmall?.copyWith(fontSize: (soraTextTheme.titleSmall?.fontSize ?? 14) * scale),
+      bodyLarge: soraTextTheme.bodyLarge?.copyWith(fontSize: (soraTextTheme.bodyLarge?.fontSize ?? 16) * scale),
+      bodyMedium: soraTextTheme.bodyMedium?.copyWith(fontSize: (soraTextTheme.bodyMedium?.fontSize ?? 14) * scale),
+      bodySmall: soraTextTheme.bodySmall?.copyWith(fontSize: (soraTextTheme.bodySmall?.fontSize ?? 12) * scale),
+      labelLarge: soraTextTheme.labelLarge?.copyWith(fontSize: (soraTextTheme.labelLarge?.fontSize ?? 14) * scale),
+      labelMedium: soraTextTheme.labelMedium?.copyWith(fontSize: (soraTextTheme.labelMedium?.fontSize ?? 12) * scale),
+      labelSmall: soraTextTheme.labelSmall?.copyWith(fontSize: (soraTextTheme.labelSmall?.fontSize ?? 11) * scale),
+    );
+
+    return theme.copyWith(
+      textTheme: scaledTextTheme,
     );
   }
 }

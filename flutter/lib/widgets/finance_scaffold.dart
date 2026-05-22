@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import '../models/app_state.dart';
 import '../theme/app_theme.dart';
+import '../theme/responsive.dart';
 
 class FinanceCard extends StatelessWidget {
   final Widget child;
@@ -22,18 +26,25 @@ class FinanceCard extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = color ?? (isDark ? AppColors.darkCard : AppColors.lightCard);
     final border = isDark ? AppColors.darkBorder : AppColors.lightBorder;
+    
+    final resolvedPadding = padding == const EdgeInsets.all(18)
+        ? EdgeInsets.all(18.r(context))
+        : padding;
+
+    final resolvedBorderRadius = BorderRadius.circular(16.r(context));
+
     final content = Container(
       margin: margin,
-      padding: padding,
+      padding: resolvedPadding,
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: resolvedBorderRadius,
         border: Border.all(color: border),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: isDark ? 0.18 : 0.06),
-            blurRadius: 18,
-            offset: const Offset(0, 10),
+            blurRadius: 18.r(context),
+            offset: Offset(0, 10.r(context)),
           ),
         ],
       ),
@@ -42,7 +53,7 @@ class FinanceCard extends StatelessWidget {
 
     if (onTap == null) return content;
     return InkWell(
-        borderRadius: BorderRadius.circular(24), onTap: onTap, child: content);
+        borderRadius: resolvedBorderRadius, onTap: onTap, child: content);
   }
 }
 
@@ -59,16 +70,17 @@ class SplitTitle extends StatelessWidget {
     required this.second,
     required this.color,
     this.icon,
-    this.size = 34,
+    this.size = 22,
   });
 
   @override
   Widget build(BuildContext context) {
+    final titleSize = size.r(context);
     return Row(
       children: [
         if (icon != null) ...[
-          Icon(icon, color: color, size: size * 0.8),
-          const SizedBox(width: 10),
+          Icon(icon, color: color, size: titleSize * 0.8),
+          SizedBox(width: 10.r(context)),
         ],
         Expanded(
           child: Text.rich(
@@ -80,7 +92,7 @@ class SplitTitle extends StatelessWidget {
             ),
             style: TextStyle(
               color: AppColors.textPrimary,
-              fontSize: size,
+              fontSize: titleSize,
               height: 1.05,
               fontWeight: FontWeight.w900,
               letterSpacing: 0,
@@ -101,7 +113,7 @@ class GradientActionButton extends StatelessWidget {
     super.key,
     required this.label,
     this.onPressed,
-    this.padding = const EdgeInsets.symmetric(vertical: 16),
+    this.padding = const EdgeInsets.symmetric(vertical: 14),
   });
 
   @override
@@ -110,13 +122,13 @@ class GradientActionButton extends StatelessWidget {
     return Opacity(
       opacity: active ? 1 : 0.55,
       child: InkWell(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(18.r(context)),
         onTap: onPressed,
         child: Container(
           width: double.infinity,
-          padding: padding,
+          padding: EdgeInsets.symmetric(vertical: 14.r(context)),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(18.r(context)),
             gradient: const LinearGradient(
               colors: [Color(0xFF7B22E8), Color(0xFF3D8DFF)],
               begin: Alignment.centerLeft,
@@ -125,17 +137,17 @@ class GradientActionButton extends StatelessWidget {
             boxShadow: [
               BoxShadow(
                 color: AppColors.blue.withValues(alpha: active ? 0.18 : 0),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
+                blurRadius: 20.r(context),
+                offset: Offset(0, 10.r(context)),
               ),
             ],
           ),
           child: Text(
             label,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               color: AppColors.textPrimary,
-              fontSize: 17,
+              fontSize: 14.r(context),
               fontWeight: FontWeight.w900,
             ),
           ),
@@ -167,42 +179,45 @@ class FinanceTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scaledLabelSize = 12.r(context);
+    final scaledInputSize = 13.r(context);
+    final scaledRadius = 14.r(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label,
-            style: const TextStyle(
+            style: GoogleFonts.spaceMono(
                 color: AppColors.textPrimary,
-                fontSize: 14,
-                fontFamily: 'monospace')),
-        const SizedBox(height: 8),
+                fontSize: scaledLabelSize)),
+        SizedBox(height: 8.r(context)),
         TextFormField(
           controller: controller,
           keyboardType: keyboardType,
           maxLines: maxLines,
           validator: validator,
           onChanged: onChanged,
-          style: const TextStyle(
+          style: TextStyle(
               color: AppColors.textPrimary,
-              fontSize: 17,
-              fontWeight: FontWeight.w800),
+              fontSize: scaledInputSize,
+              fontWeight: FontWeight.w600),
           decoration: InputDecoration(
+            isDense: true,
             hintText: hint,
             hintStyle: const TextStyle(color: AppColors.textSecondary),
             contentPadding:
-                const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+                EdgeInsets.symmetric(horizontal: 16.r(context), vertical: 12.r(context)),
             filled: true,
             fillColor: AppColors.darkCard,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(scaledRadius),
               borderSide: const BorderSide(color: AppColors.darkBorder),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(scaledRadius),
               borderSide: const BorderSide(color: AppColors.darkBorder),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(scaledRadius),
               borderSide: const BorderSide(color: AppColors.purple),
             ),
           ),
@@ -230,15 +245,17 @@ class FinanceSelectField<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scaledLabelSize = 12.r(context);
+    final scaledInputSize = 13.r(context);
+    final scaledRadius = 14.r(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label,
-            style: const TextStyle(
+            style: GoogleFonts.spaceMono(
                 color: AppColors.textPrimary,
-                fontSize: 14,
-                fontFamily: 'monospace')),
-        const SizedBox(height: 8),
+                fontSize: scaledLabelSize)),
+        SizedBox(height: 8.r(context)),
         DropdownButtonFormField<T>(
           value: value,
           items: items,
@@ -246,21 +263,22 @@ class FinanceSelectField<T> extends StatelessWidget {
           onChanged: onChanged,
           dropdownColor: AppColors.darkCard,
           iconEnabledColor: AppColors.textSecondary,
-          style: const TextStyle(
+          style: TextStyle(
               color: AppColors.textPrimary,
-              fontSize: 16,
-              fontWeight: FontWeight.w800),
+              fontSize: scaledInputSize,
+              fontWeight: FontWeight.w600),
           decoration: InputDecoration(
+            isDense: true,
             contentPadding:
-                const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+                EdgeInsets.symmetric(horizontal: 16.r(context), vertical: 12.r(context)),
             filled: true,
             fillColor: AppColors.darkCard,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(scaledRadius),
               borderSide: const BorderSide(color: AppColors.darkBorder),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(scaledRadius),
               borderSide: const BorderSide(color: AppColors.darkBorder),
             ),
           ),
@@ -286,30 +304,31 @@ class SourceBalanceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scaledWidth = width.r(context);
     return SizedBox(
-      width: width,
+      width: scaledWidth,
       child: FinanceCard(
-        padding: const EdgeInsets.all(18),
+        padding: EdgeInsets.all(18.r(context)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(label,
-                style: const TextStyle(
-                    color: AppColors.textSecondary, fontFamily: 'monospace')),
-            const SizedBox(height: 10),
+                style: GoogleFonts.spaceMono(
+                    color: AppColors.textSecondary, fontSize: 11.r(context))),
+            SizedBox(height: 10.r(context)),
             Text(maskedName,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                    fontSize: 18,
+                style: TextStyle(
+                    fontSize: 18.r(context),
                     fontWeight: FontWeight.w900,
                     color: AppColors.textPrimary)),
-            const SizedBox(height: 12),
-            const Text('Current balance',
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 14)),
+            SizedBox(height: 12.r(context)),
+            Text('Current balance',
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 14.r(context))),
             Text(balance,
-                style: const TextStyle(
+                style: TextStyle(
                     color: AppColors.green,
-                    fontSize: 28,
+                    fontSize: 28.r(context),
                     fontWeight: FontWeight.w900)),
           ],
         ),
@@ -333,20 +352,20 @@ class EmptyFinanceState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FinanceCard(
-      padding: const EdgeInsets.all(28),
+      padding: EdgeInsets.all(28.r(context)),
       child: Column(
         children: [
-          Icon(icon, size: 38, color: AppColors.textSecondary),
-          const SizedBox(height: 12),
+          Icon(icon, size: 38.r(context), color: AppColors.textSecondary),
+          SizedBox(height: 12.r(context)),
           Text(title,
               textAlign: TextAlign.center,
               style:
-                  const TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
-          const SizedBox(height: 10),
+                  TextStyle(fontSize: 20.r(context), fontWeight: FontWeight.w900)),
+          SizedBox(height: 10.r(context)),
           Text(message,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                  color: AppColors.textSecondary, fontFamily: 'monospace')),
+              style: GoogleFonts.spaceMono(
+                  color: AppColors.textSecondary, fontSize: 12.r(context))),
         ],
       ),
     );
@@ -366,6 +385,11 @@ class FinanceFooter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bottom = MediaQuery.paddingOf(context).bottom;
+    final footerHeight = 66.r(context);
+    final buttonSize = 54.r(context);
+    final iconSize = 26.r(context);
+    final topOffset = (footerHeight - buttonSize) / 2;
+
     return Positioned(
       left: 0,
       right: 0,
@@ -377,22 +401,22 @@ class FinanceFooter extends StatelessWidget {
           clipBehavior: Clip.none,
           children: [
             Container(
-              height: 66,
+              height: footerHeight,
               decoration: BoxDecoration(
                 color: Theme.of(context).brightness == Brightness.dark
                     ? AppColors.darkCard
                     : AppColors.lightCard,
                 borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(24)),
+                    BorderRadius.vertical(top: Radius.circular(24.r(context))),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.22),
-                    blurRadius: 22,
-                    offset: const Offset(0, -8),
+                    blurRadius: 22.r(context),
+                    offset: Offset(0, -8.r(context)),
                   ),
                 ],
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: EdgeInsets.symmetric(horizontal: 20.r(context)),
               child: Row(
                 children: [
                   _FooterButton(
@@ -400,7 +424,7 @@ class FinanceFooter extends StatelessWidget {
                     active: activeIndex == 0,
                     onTap: () => onTabSelected(0),
                   ),
-                  const Spacer(),
+                  const Expanded(child: SizedBox.shrink()),
                   _FooterButton(
                     icon: Icons.settings_outlined,
                     active: activeIndex == 2,
@@ -410,30 +434,30 @@ class FinanceFooter extends StatelessWidget {
               ),
             ),
             Positioned(
-              top: -27,
+              top: topOffset,
               child: InkWell(
-                borderRadius: BorderRadius.circular(27),
+                borderRadius: BorderRadius.circular(buttonSize / 2),
                 onTap: () => onTabSelected(1),
                 child: Container(
-                  width: 54,
-                  height: 54,
+                  width: buttonSize,
+                  height: buttonSize,
                   decoration: BoxDecoration(
                     color: AppColors.purple,
-                    borderRadius: BorderRadius.circular(27),
+                    borderRadius: BorderRadius.circular(buttonSize / 2),
                     boxShadow: [
                       BoxShadow(
                         color: AppColors.purple.withValues(alpha: 0.35),
-                        blurRadius: 24,
-                        offset: const Offset(0, 10),
+                        blurRadius: 24.r(context),
+                        offset: Offset(0, 10.r(context)),
                       ),
                     ],
                   ),
                   child: Icon(
-                    Icons.psychology_alt_outlined,
+                    Icons.psychology,
                     color: activeIndex == 1
                         ? AppColors.purpleLight
-                        : AppColors.darkCard,
-                    size: 28,
+                        : Colors.white,
+                    size: iconSize,
                   ),
                 ),
               ),
@@ -462,24 +486,181 @@ class _FooterButton extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: SizedBox(
-          height: 66,
+          width: double.infinity,
+          height: 66.r(context),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(icon,
                   color: active ? AppColors.purple : AppColors.textSecondary,
-                  size: 22),
+                  size: 26.r(context)),
               if (active) ...[
-                const SizedBox(height: 4),
+                SizedBox(height: 4.r(context)),
                 Container(
-                  width: 6,
-                  height: 6,
+                  width: 6.r(context),
+                  height: 6.r(context),
                   decoration: const BoxDecoration(
                       color: AppColors.purple, shape: BoxShape.circle),
                 ),
               ],
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class FinanceNavigationRail extends StatelessWidget {
+  final int activeIndex;
+  final ValueChanged<int> onTabSelected;
+
+  const FinanceNavigationRail({
+    super.key,
+    required this.activeIndex,
+    required this.onTabSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final railBg = isDark ? AppColors.darkCard : AppColors.lightCard;
+    final border = isDark ? AppColors.darkBorder : AppColors.lightBorder;
+    final iconSize = 26.r(context);
+    final appState = context.watch<AppStateModel>();
+
+    return Container(
+      width: 76.r(context),
+      decoration: BoxDecoration(
+        color: railBg,
+        border: Border(right: BorderSide(color: border)),
+      ),
+      child: SafeArea(
+        right: false,
+        child: Column(
+          children: [
+            SizedBox(height: 20.r(context)),
+            // Miniature Logo
+            Container(
+              width: 44.r(context),
+              height: 44.r(context),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(14.r(context)),
+                gradient: const LinearGradient(
+                  colors: [AppColors.purple, AppColors.blue],
+                  begin: Alignment.bottomLeft,
+                  end: Alignment.topRight,
+                ),
+              ),
+              child: Icon(Icons.account_balance_wallet_outlined,
+                  size: 22.r(context), color: Colors.white),
+            ),
+            const Spacer(),
+            // Navigation Icons
+            _RailButton(
+              icon: Icons.home_outlined,
+              active: activeIndex == 0,
+              onTap: () => onTabSelected(0),
+            ),
+            SizedBox(height: 24.r(context)),
+            // Psychology FAB/Middle Button
+            InkWell(
+              borderRadius: BorderRadius.circular(22.r(context)),
+              onTap: () => onTabSelected(1),
+              child: Container(
+                width: 46.r(context),
+                height: 46.r(context),
+                decoration: BoxDecoration(
+                  color: AppColors.purple,
+                  borderRadius: BorderRadius.circular(23.r(context)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.purple.withValues(alpha: 0.35),
+                      blurRadius: 12.r(context),
+                      offset: Offset(0, 4.r(context)),
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  Icons.psychology,
+                  color: activeIndex == 1
+                      ? AppColors.purpleLight
+                      : Colors.white,
+                  size: iconSize,
+                ),
+              ),
+            ),
+            SizedBox(height: 24.r(context)),
+            _RailButton(
+              icon: Icons.settings_outlined,
+              active: activeIndex == 2,
+              onTap: () => onTabSelected(2),
+            ),
+            const Spacer(),
+            // Theme Toggle
+            IconButton(
+              icon: Icon(
+                appState.themeMode == ThemeMode.light
+                    ? Icons.dark_mode_outlined
+                    : Icons.light_mode_outlined,
+                color: AppColors.textSecondary,
+                size: 22.r(context),
+              ),
+              onPressed: () {
+                appState.setThemeMode(
+                  appState.themeMode == ThemeMode.light
+                      ? ThemeMode.dark
+                      : ThemeMode.light,
+                );
+              },
+            ),
+            SizedBox(height: 16.r(context)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RailButton extends StatelessWidget {
+  final IconData icon;
+  final bool active;
+  final VoidCallback onTap;
+
+  const _RailButton({
+    required this.icon,
+    required this.active,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12.r(context)),
+      child: SizedBox(
+        width: 50.r(context),
+        height: 50.r(context),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Icon(icon,
+                color: active ? AppColors.purple : AppColors.textSecondary,
+                size: 26.r(context)),
+            if (active)
+              Positioned(
+                left: 0,
+                top: 15.r(context),
+                bottom: 15.r(context),
+                child: Container(
+                  width: 4.r(context),
+                  decoration: BoxDecoration(
+                    color: AppColors.purple,
+                    borderRadius: BorderRadius.circular(2.r(context)),
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );

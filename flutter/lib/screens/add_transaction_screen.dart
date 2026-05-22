@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../models/app_state.dart';
 import '../models/transaction.dart';
 import '../theme/app_theme.dart';
+import '../theme/responsive.dart';
 import '../widgets/finance_scaffold.dart';
 
 class AddTransactionScreen extends StatefulWidget {
@@ -54,261 +56,281 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     _sourceId ??=
         appState.sources.isNotEmpty ? appState.sources.first.id : null;
 
+    final isTablet = Responsive.isTablet(context);
+
     return Scaffold(
-      backgroundColor: Colors.black.withValues(alpha: 0.72),
-      body: SafeArea(
-        child: Align(
-          alignment: Alignment.bottomCenter,
-          child: Container(
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.sizeOf(context).height * 0.92,
+      backgroundColor: Colors.transparent,
+      body: Stack(
+        children: [
+          GestureDetector(
+            onTap: () => Navigator.of(context).pop(),
+            child: Container(
+              color: Colors.transparent,
             ),
-            decoration: const BoxDecoration(
-              color: AppColors.darkBg,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-              border: Border(top: BorderSide(color: AppColors.darkBorder)),
-            ),
-            child: Form(
-              key: _formKey,
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(20, 10, 20, 28),
-                children: [
-                  Center(
-                    child: Container(
-                      width: 44,
-                      height: 5,
-                      decoration: BoxDecoration(
-                        color: AppColors.darkBorder,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
+          ),
+          SafeArea(
+            child: Align(
+              alignment: isTablet ? Alignment.center : Alignment.bottomCenter,
+              child: Container(
+                margin: isTablet ? EdgeInsets.symmetric(horizontal: 24.r(context)) : EdgeInsets.zero,
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.sizeOf(context).height * 0.88,
+                  maxWidth: isTablet ? 500.r(context) : double.infinity,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.darkBg,
+                  borderRadius: isTablet
+                      ? BorderRadius.circular(28.r(context))
+                      : BorderRadius.vertical(top: Radius.circular(28.r(context))),
+                  border: isTablet
+                      ? Border.all(color: AppColors.darkBorder)
+                      : const Border(top: BorderSide(color: AppColors.darkBorder)),
+                ),
+                child: Form(
+                  key: _formKey,
+                  child: ListView(
+                    shrinkWrap: isTablet,
+                    padding: EdgeInsets.fromLTRB(20.r(context), 10.r(context), 20.r(context), 28.r(context)),
                     children: [
-                      IconButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          icon: const Icon(Icons.close,
-                              color: AppColors.textPrimary, size: 30)),
-                      Expanded(
-                        child: Text.rich(
-                          TextSpan(
-                            text: _editingId == null ? 'Add ' : 'Update ',
-                            children: const [
-                              TextSpan(
-                                  text: 'Transaction',
-                                  style: TextStyle(color: AppColors.blue)),
-                            ],
-                          ),
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: AppColors.textPrimary,
-                            fontSize: 25,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 48),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _TypeChip(
-                            label: 'Expense',
-                            value: 'expense',
-                            groupValue: _type,
-                            color: AppColors.orange,
-                            onChanged: _setType),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _TypeChip(
-                            label: 'Income',
-                            value: 'income',
-                            groupValue: _type,
-                            color: AppColors.green,
-                            onChanged: _setType),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _TypeChip(
-                            label: 'Borrow / Lend',
-                            value: _type == 'lend' ? 'lend' : 'borrow',
-                            groupValue: (_type == 'borrow' || _type == 'lend')
-                                ? (_type == 'lend' ? 'lend' : 'borrow')
-                                : _type,
-                            color: AppColors.blue,
-                            onChanged: (_) => _setType('borrow')),
-                      ),
-                    ],
-                  ),
-                  if (_type == 'borrow' || _type == 'lend') ...[
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _TypeChip(
-                              label: 'Borrow',
-                              value: 'borrow',
-                              groupValue: _type,
-                              color: const Color(0xFFFFD44D),
-                              onChanged: _setType),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _TypeChip(
-                              label: 'Lend',
-                              value: 'lend',
-                              groupValue: _type,
-                              color: AppColors.blue,
-                              onChanged: _setType),
-                        ),
-                      ],
-                    ),
-                  ],
-                  const SizedBox(height: 20),
-                  FinanceTextField(
-                    controller: _amountController,
-                    label: 'Amount',
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    validator: (value) {
-                      final parsed = double.tryParse(value ?? '');
-                      if (parsed == null || parsed <= 0) {
-                        return 'Enter a valid amount';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 18),
-                  if (_type == 'income') ...[
-                    FinanceSelectField<String>(
-                      value: _categoryId,
-                      label: 'Income Source*',
-                      items: const [
-                        DropdownMenuItem(
-                            value: 'salary', child: Text('salary')),
-                        DropdownMenuItem(value: 'other', child: Text('other')),
-                      ],
-                      onChanged: (value) => setState(() => _categoryId = value),
-                    ),
-                    const SizedBox(height: 18),
-                    FinanceSelectField<String>(
-                      value: _sourceId,
-                      label: 'Deposit To*',
-                      items: appState.sources
-                          .map((source) => DropdownMenuItem(
-                              value: source.id, child: Text(source.name)))
-                          .toList(),
-                      onChanged: (value) => setState(() => _sourceId = value),
-                      validator: (value) =>
-                          value == null ? 'Select a source' : null,
-                    ),
-                  ] else if (_type == 'expense') ...[
-                    FinanceSelectField<String>(
-                      value: _categoryId,
-                      label: 'Category*',
-                      items: expenseCategories
-                          .map((category) => DropdownMenuItem(
-                              value: category.id,
-                              child: Text(
-                                  '${_categoryEmoji(category.id)} ${category.name}')))
-                          .toList(),
-                      onChanged: (value) => setState(() => _categoryId = value),
-                    ),
-                    const SizedBox(height: 18),
-                    FinanceSelectField<String>(
-                      value: _sourceId,
-                      label: 'From*',
-                      items: appState.sources
-                          .map((source) => DropdownMenuItem(
-                              value: source.id, child: Text(source.name)))
-                          .toList(),
-                      onChanged: (value) => setState(() => _sourceId = value),
-                      validator: (value) =>
-                          value == null ? 'Select a source' : null,
-                    ),
-                  ] else ...[
-                    FinanceSelectField<String>(
-                      value: _sourceId,
-                      label: 'Source*',
-                      items: appState.sources
-                          .map((source) => DropdownMenuItem(
-                              value: source.id, child: Text(source.name)))
-                          .toList(),
-                      onChanged: (value) => setState(() => _sourceId = value),
-                      validator: (value) =>
-                          value == null ? 'Select a source' : null,
-                    ),
-                    const SizedBox(height: 18),
-                    FinanceTextField(
-                      controller: _counterpartyController,
-                      label: 'Other Party*',
-                      hint: 'Name',
-                      validator: (value) {
-                        if ((value ?? '').trim().isEmpty) {
-                          return 'Enter the other party';
-                        }
-                        return null;
-                      },
-                    ),
-                  ],
-                  const SizedBox(height: 18),
-                  const Text('Date',
-                      style: TextStyle(
-                          color: AppColors.textPrimary,
-                          fontSize: 14,
-                          fontFamily: 'monospace')),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
+                      Center(
                         child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 18, vertical: 16),
+                          width: 44.r(context),
+                          height: 5.r(context),
+                          decoration: BoxDecoration(
+                            color: AppColors.darkBorder,
+                            borderRadius: BorderRadius.circular(4.r(context)),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 16.r(context)),
+                      Row(
+                        children: [
+                          IconButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              icon: Icon(Icons.close,
+                                  color: AppColors.textPrimary, size: 30.r(context))),
+                          Expanded(
+                            child: Text.rich(
+                              TextSpan(
+                                text: _editingId == null ? 'Add ' : 'Update ',
+                                children: const [
+                                  TextSpan(
+                                      text: 'Transaction',
+                                      style: TextStyle(color: AppColors.blue)),
+                                ],
+                              ),
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: AppColors.textPrimary,
+                                fontSize: 25.r(context),
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 48.r(context)),
+                        ],
+                      ),
+                      SizedBox(height: 12.r(context)),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _TypeChip(
+                                label: 'Expense',
+                                value: 'expense',
+                                groupValue: _type,
+                                color: AppColors.orange,
+                                onChanged: _setType),
+                          ),
+                          SizedBox(width: 10.r(context)),
+                          Expanded(
+                            child: _TypeChip(
+                                label: 'Income',
+                                value: 'income',
+                                groupValue: _type,
+                                color: AppColors.green,
+                                onChanged: _setType),
+                          ),
+                          SizedBox(width: 10.r(context)),
+                          Expanded(
+                            child: _TypeChip(
+                                label: 'Borrow / Lend',
+                                value: _type == 'lend' ? 'lend' : 'borrow',
+                                groupValue: (_type == 'borrow' || _type == 'lend')
+                                    ? (_type == 'lend' ? 'lend' : 'borrow')
+                                    : _type,
+                                color: AppColors.blue,
+                                onChanged: (_) => _setType('borrow')),
+                          ),
+                        ],
+                      ),
+                      if (_type == 'borrow' || _type == 'lend') ...[
+                        SizedBox(height: 12.r(context)),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _TypeChip(
+                                  label: 'Borrow',
+                                  value: 'borrow',
+                                  groupValue: _type,
+                                  color: const Color(0xFFFFD44D),
+                                  onChanged: _setType),
+                            ),
+                            SizedBox(width: 12.r(context)),
+                            Expanded(
+                              child: _TypeChip(
+                                  label: 'Lend',
+                                  value: 'lend',
+                                  groupValue: _type,
+                                  color: AppColors.blue,
+                                  onChanged: _setType),
+                            ),
+                          ],
+                        ),
+                      ],
+                      SizedBox(height: 20.r(context)),
+                      FinanceTextField(
+                        controller: _amountController,
+                        label: 'Amount',
+                        keyboardType:
+                            const TextInputType.numberWithOptions(decimal: true),
+                        validator: (value) {
+                          final parsed = double.tryParse(value ?? '');
+                          if (parsed == null || parsed <= 0) {
+                            return 'Enter a valid amount';
+                          }
+                          return null;
+                        },
+                      ),
+                      SizedBox(height: 18.r(context)),
+                      if (_type == 'income') ...[
+                        FinanceSelectField<String>(
+                          value: _categoryId,
+                          label: 'Income Source*',
+                          items: const [
+                            DropdownMenuItem(
+                                value: 'salary', child: Text('salary')),
+                            DropdownMenuItem(value: 'other', child: Text('other')),
+                          ],
+                          onChanged: (value) => setState(() => _categoryId = value),
+                        ),
+                        SizedBox(height: 18.r(context)),
+                        FinanceSelectField<String>(
+                          value: _sourceId,
+                          label: 'Deposit To*',
+                          items: appState.sources
+                              .map((source) => DropdownMenuItem(
+                                  value: source.id, child: Text(source.name)))
+                              .toList(),
+                          onChanged: (value) => setState(() => _sourceId = value),
+                          validator: (value) =>
+                              value == null ? 'Select a source' : null,
+                        ),
+                      ] else if (_type == 'expense') ...[
+                        FinanceSelectField<String>(
+                          value: _categoryId,
+                          label: 'Category*',
+                          items: expenseCategories
+                              .map((category) => DropdownMenuItem(
+                                  value: category.id,
+                                  child: Text(
+                                      '${_categoryEmoji(category.id)} ${category.name}')))
+                              .toList(),
+                          onChanged: (value) => setState(() => _categoryId = value),
+                        ),
+                        SizedBox(height: 18.r(context)),
+                        FinanceSelectField<String>(
+                          value: _sourceId,
+                          label: 'From*',
+                          items: appState.sources
+                              .map((source) => DropdownMenuItem(
+                                  value: source.id, child: Text(source.name)))
+                              .toList(),
+                          onChanged: (value) => setState(() => _sourceId = value),
+                          validator: (value) =>
+                              value == null ? 'Select a source' : null,
+                        ),
+                      ] else ...[
+                        FinanceSelectField<String>(
+                          value: _sourceId,
+                          label: 'Source*',
+                          items: appState.sources
+                              .map((source) => DropdownMenuItem(
+                                  value: source.id, child: Text(source.name)))
+                              .toList(),
+                          onChanged: (value) => setState(() => _sourceId = value),
+                          validator: (value) =>
+                              value == null ? 'Select a source' : null,
+                        ),
+                        SizedBox(height: 18.r(context)),
+                        FinanceTextField(
+                          controller: _counterpartyController,
+                          label: 'Other Party*',
+                          hint: 'Name',
+                          validator: (value) {
+                            if ((value ?? '').trim().isEmpty) {
+                              return 'Enter the other party';
+                            }
+                            return null;
+                          },
+                        ),
+                      ],
+                      SizedBox(height: 18.r(context)),
+                      Text('Date',
+                          style: GoogleFonts.spaceMono(
+                              color: AppColors.textPrimary,
+                              fontSize: 12.r(context))),
+                      SizedBox(height: 8.r(context)),
+                      GestureDetector(
+                        onTap: _pickDate,
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 16.r(context), vertical: 12.r(context)),
                           decoration: BoxDecoration(
                             color: AppColors.darkCard,
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(14.r(context)),
                             border: Border.all(color: AppColors.darkBorder),
                           ),
-                          child: Text(
-                            DateFormat('yyyy-MM-dd').format(_date),
-                            style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w900,
-                                color: AppColors.textPrimary),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                DateFormat('yyyy-MM-dd').format(_date),
+                                style: TextStyle(
+                                    fontSize: 13.r(context),
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.textPrimary),
+                              ),
+                              Icon(
+                                Icons.calendar_month_outlined,
+                                color: AppColors.green,
+                                size: 20.r(context),
+                              ),
+                            ],
                           ),
                         ),
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.calendar_month_outlined,
-                            color: AppColors.green),
-                        onPressed: _pickDate,
+                      SizedBox(height: 18.r(context)),
+                      FinanceTextField(
+                        controller: _noteController,
+                        label: 'Note',
+                        hint: 'Add note (optional)',
+                      ),
+                      SizedBox(height: 22.r(context)),
+                      GradientActionButton(
+                        onPressed: _saving ? null : () => _save(appState),
+                        label: _saving
+                            ? 'Saving...'
+                            : _editingId == null
+                                ? 'Add Transaction'
+                                : 'Update Transaction',
                       ),
                     ],
                   ),
-                  const SizedBox(height: 18),
-                  FinanceTextField(
-                    controller: _noteController,
-                    label: 'Note',
-                    hint: 'Add note (optional)',
-                  ),
-                  const SizedBox(height: 22),
-                  GradientActionButton(
-                    onPressed: _saving ? null : () => _save(appState),
-                    label: _saving
-                        ? 'Saving...'
-                        : _editingId == null
-                            ? 'Add Transaction'
-                            : 'Update Transaction',
-                  ),
-                ],
+                ),
               ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -410,14 +432,14 @@ class _TypeChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final active = value == groupValue;
     return InkWell(
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(12.r(context)),
       onTap: () => onChanged(value),
       child: Container(
-        height: 56,
+        height: 44.r(context),
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: active ? color.withValues(alpha: 0.12) : AppColors.darkCard,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12.r(context)),
           border: Border.all(color: active ? color : AppColors.darkBorder),
         ),
         child: FittedBox(
@@ -427,7 +449,7 @@ class _TypeChip extends StatelessWidget {
             style: TextStyle(
               color: active ? AppColors.textPrimary : AppColors.textSecondary,
               fontWeight: FontWeight.w900,
-              fontSize: 16,
+              fontSize: 13.r(context),
             ),
           ),
         ),

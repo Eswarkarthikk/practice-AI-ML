@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../models/app_state.dart';
 import '../models/transaction.dart';
 import '../theme/app_theme.dart';
+import '../theme/responsive.dart';
 import '../widgets/finance_scaffold.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -37,155 +39,160 @@ class _ChatScreenState extends State<ChatScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Finance Chat'),
+        title: Text('Finance Chat', style: TextStyle(fontSize: 20.r(context), fontWeight: FontWeight.bold)),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
       body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                reverse: false,
-                children: [
-                  Wrap(
-                    spacing: 8,
-                    children: [
-                      ActionChip(
-                          label: const Text('Balance'),
-                          onPressed: () => _sendQuick(appState, 'What is my current balance?')),
-                      ActionChip(
-                          label: const Text('Monthly expense'),
-                          onPressed: () => _sendQuick(appState, 'How much did I spend this month?')),
-                      ActionChip(
-                          label: const Text('Budgets'),
-                          onPressed: () => _sendQuick(appState, 'What is my budget status?')),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  ..._messages.map((message) => Align(
-                        alignment: message.fromUser
-                            ? Alignment.centerRight
-                            : Alignment.centerLeft,
-                        child: Container(
-                          margin: const EdgeInsets.only(bottom: 10),
-                          padding: const EdgeInsets.all(14),
-                          constraints: const BoxConstraints(maxWidth: 300),
-                          decoration: BoxDecoration(
-                            color: message.fromUser
-                                ? AppColors.purple
-                                : Theme.of(context).cardColor,
-                            borderRadius: BorderRadius.circular(20),
-                            border: message.fromUser
-                                ? null
-                                : Border.all(color: AppColors.darkBorder),
+        child: Responsive.constrained(
+          context,
+          Column(
+            children: [
+              Expanded(
+                child: ListView(
+                  padding: EdgeInsets.fromLTRB(16.r(context), 8.r(context), 16.r(context), 16.r(context)),
+                  reverse: false,
+                  children: [
+                    Wrap(
+                      spacing: 8.r(context),
+                      children: [
+                        ActionChip(
+                            label: Text('Balance', style: TextStyle(fontSize: 12.r(context))),
+                            onPressed: () => _sendQuick(appState, 'What is my current balance?')),
+                        ActionChip(
+                            label: Text('Monthly expense', style: TextStyle(fontSize: 12.r(context))),
+                            onPressed: () => _sendQuick(appState, 'How much did I spend this month?')),
+                        ActionChip(
+                            label: Text('Budgets', style: TextStyle(fontSize: 12.r(context))),
+                            onPressed: () => _sendQuick(appState, 'What is my budget status?')),
+                      ],
+                    ),
+                    SizedBox(height: 12.r(context)),
+                    ..._messages.map((message) => Align(
+                          alignment: message.fromUser
+                              ? Alignment.centerRight
+                              : Alignment.centerLeft,
+                          child: Container(
+                            margin: EdgeInsets.only(bottom: 10.r(context)),
+                            padding: EdgeInsets.all(14.r(context)),
+                            constraints: BoxConstraints(maxWidth: 300.r(context)),
+                            decoration: BoxDecoration(
+                              color: message.fromUser
+                                  ? AppColors.purple
+                                  : Theme.of(context).cardColor,
+                              borderRadius: BorderRadius.circular(20.r(context)),
+                              border: message.fromUser
+                                  ? null
+                                  : Border.all(color: AppColors.darkBorder),
+                            ),
+                            child: Text(
+                              message.text,
+                              style: TextStyle(
+                                color: AppColors.textPrimary,
+                                fontSize: 15.r(context),
+                                height: 1.3,
+                              ),
+                            ),
                           ),
-                          child: Text(
-                            message.text,
-                            style: const TextStyle(
-                              color: AppColors.textPrimary,
-                              fontSize: 15,
-                              height: 1.3,
+                        )),
+                    if (_loading)
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Container(
+                          margin: EdgeInsets.only(bottom: 10.r(context)),
+                          padding: EdgeInsets.all(14.r(context)),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).cardColor,
+                            borderRadius: BorderRadius.circular(20.r(context)),
+                            border: Border.all(color: AppColors.darkBorder),
+                          ),
+                          child: SizedBox(
+                            width: 18.r(context),
+                            height: 18.r(context),
+                            child: const CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              valueColor: AlwaysStoppedAnimation<Color>(AppColors.purple),
                             ),
                           ),
                         ),
-                      )),
-                  if (_loading)
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Container(
-                        margin: const EdgeInsets.only(bottom: 10),
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).cardColor,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: AppColors.darkBorder),
-                        ),
-                        child: const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.5,
-                            valueColor: AlwaysStoppedAnimation<Color>(AppColors.purple),
-                          ),
-                        ),
                       ),
-                    ),
-                ],
-              ),
-            ),
-            if (!hasKey)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: FinanceCard(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      const Text(
-                        'Gemini API Key is not configured. Please add your key in Settings to start chatting.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                            color: AppColors.textSecondary,
-                            fontFamily: 'monospace',
-                            fontSize: 14),
-                      ),
-                      const SizedBox(height: 12),
-                      FilledButton.icon(
-                        style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.purple,
-                        ),
-                        onPressed: () => Navigator.of(context).pushNamed('/settings'),
-                        icon: const Icon(Icons.settings),
-                        label: const Text('Go to Settings'),
-                      ),
-                    ],
-                  ),
+                  ],
                 ),
               ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _controller,
-                      enabled: hasKey && !_loading,
-                      decoration: InputDecoration(
-                        labelText: hasKey ? 'Ask about your finance...' : 'Configure API Key in settings',
-                        labelStyle: const TextStyle(color: AppColors.textSecondary),
-                        filled: true,
-                        fillColor: AppColors.darkCard,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24),
-                          borderSide: const BorderSide(color: AppColors.darkBorder),
+              if (!hasKey)
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16.r(context), vertical: 8.r(context)),
+                  child: FinanceCard(
+                    padding: EdgeInsets.all(16.r(context)),
+                    child: Column(
+                      children: [
+                        Text(
+                          'Gemini API Key is not configured. Please add your key in Settings to start chatting.',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.spaceMono(
+                              color: AppColors.textSecondary,
+                              fontSize: 14.r(context)),
                         ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24),
-                          borderSide: const BorderSide(color: AppColors.darkBorder),
+                        SizedBox(height: 12.r(context)),
+                        FilledButton.icon(
+                          style: FilledButton.styleFrom(
+                            backgroundColor: AppColors.purple,
+                            padding: EdgeInsets.symmetric(horizontal: 16.r(context), vertical: 12.r(context)),
+                          ),
+                          onPressed: () => Navigator.of(context).pushNamed('/settings'),
+                          icon: Icon(Icons.settings, size: 20.r(context)),
+                          label: Text('Go to Settings', style: TextStyle(fontSize: 14.r(context))),
                         ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24),
-                          borderSide: const BorderSide(color: AppColors.purple),
+                      ],
+                    ),
+                  ),
+                ),
+              Padding(
+                padding: EdgeInsets.fromLTRB(16.r(context), 8.r(context), 16.r(context), 16.r(context)),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _controller,
+                        enabled: hasKey && !_loading,
+                        style: TextStyle(fontSize: 14.r(context), color: AppColors.textPrimary),
+                        decoration: InputDecoration(
+                          labelText: hasKey ? 'Ask about your finance...' : 'Configure API Key in settings',
+                          labelStyle: TextStyle(color: AppColors.textSecondary, fontSize: 14.r(context)),
+                          filled: true,
+                          fillColor: AppColors.darkCard,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(24.r(context)),
+                            borderSide: const BorderSide(color: AppColors.darkBorder),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(24.r(context)),
+                            borderSide: const BorderSide(color: AppColors.darkBorder),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(24.r(context)),
+                            borderSide: const BorderSide(color: AppColors.purple),
+                          ),
+                          contentPadding: EdgeInsets.symmetric(horizontal: 20.r(context), vertical: 14.r(context)),
                         ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                        onSubmitted: (_) => _send(appState),
                       ),
-                      onSubmitted: (_) => _send(appState),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton.filled(
-                    style: IconButton.styleFrom(
-                      backgroundColor: AppColors.purple,
-                      foregroundColor: Colors.white,
+                    SizedBox(width: 8.r(context)),
+                    IconButton.filled(
+                      style: IconButton.styleFrom(
+                        backgroundColor: AppColors.purple,
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.all(12.r(context)),
+                      ),
+                      onPressed: hasKey && !_loading ? () => _send(appState) : null,
+                      icon: Icon(Icons.send, size: 20.r(context)),
                     ),
-                    onPressed: hasKey && !_loading ? () => _send(appState) : null,
-                    icon: const Icon(Icons.send),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
