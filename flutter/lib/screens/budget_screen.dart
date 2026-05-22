@@ -958,12 +958,12 @@ class _BudgetScreenState extends State<BudgetScreen> {
 
             return Dialog(
               backgroundColor: AppColors.darkCard,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.r(context))),
-              insetPadding: EdgeInsets.symmetric(horizontal: 16.r(context), vertical: 24.r(context)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r(context))),
+              insetPadding: EdgeInsets.symmetric(horizontal: 16.r(context), vertical: 16.r(context)),
               child: ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: 500.r(context)),
+                constraints: BoxConstraints(maxWidth: 380.r(context)),
                 child: Padding(
-                  padding: EdgeInsets.all(18.r(context)),
+                  padding: EdgeInsets.all(14.r(context)),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -973,82 +973,89 @@ class _BudgetScreenState extends State<BudgetScreen> {
                         children: [
                           Text(
                             'Edit Budget Limits',
-                            style: TextStyle(color: Colors.white, fontSize: 20.r(context), fontWeight: FontWeight.w800),
+                            style: TextStyle(color: Colors.white, fontSize: 16.r(context), fontWeight: FontWeight.bold),
                           ),
                           IconButton(
                             onPressed: () => Navigator.pop(context),
-                            icon: Icon(Icons.close, color: AppColors.textSecondary, size: 24.r(context)),
+                            icon: Icon(Icons.close, color: AppColors.textSecondary, size: 20.r(context)),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
                           ),
                         ],
                       ),
                       SizedBox(height: 10.r(context)),
-                      Expanded(
-                        child: SingleChildScrollView(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Monthly Budget Cap',
-                                style: TextStyle(color: AppColors.textSecondary, fontSize: 13.r(context), fontWeight: FontWeight.w800),
-                              ),
-                              SizedBox(height: 8.r(context)),
-                              TextField(
-                                controller: capController,
-                                keyboardType: TextInputType.number,
-                                style: const TextStyle(color: Colors.white),
-                                onChanged: (_) => setState(() {}),
-                                decoration: InputDecoration(
-                                  hintText: 'Monthly Cap',
-                                  hintStyle: const TextStyle(color: AppColors.textSecondary),
-                                  filled: true,
-                                  fillColor: AppColors.darkBg,
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12.r(context)),
-                                    borderSide: BorderSide.none,
+                      Flexible(
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(maxHeight: 320.r(context)),
+                          child: SingleChildScrollView(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Monthly Budget Cap',
+                                  style: TextStyle(color: AppColors.textSecondary, fontSize: 11.r(context), fontWeight: FontWeight.w700),
+                                ),
+                                SizedBox(height: 6.r(context)),
+                                TextField(
+                                  controller: capController,
+                                  keyboardType: TextInputType.number,
+                                  style: TextStyle(color: Colors.white, fontSize: 13.r(context)),
+                                  onChanged: (_) => setState(() {}),
+                                  decoration: InputDecoration(
+                                    isDense: true,
+                                    hintText: 'Monthly Cap',
+                                    hintStyle: const TextStyle(color: AppColors.textSecondary),
+                                    filled: true,
+                                    fillColor: AppColors.darkBg,
+                                    contentPadding: EdgeInsets.symmetric(horizontal: 12.r(context), vertical: 10.r(context)),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(10.r(context)),
+                                      borderSide: BorderSide.none,
+                                    ),
                                   ),
                                 ),
-                              ),
-                              SizedBox(height: 18.r(context)),
-                              Text(
-                                'Category Limits',
-                                style: TextStyle(color: AppColors.textSecondary, fontSize: 13.r(context), fontWeight: FontWeight.w800),
-                              ),
-                              SizedBox(height: 10.r(context)),
-                              ...items.map((item) {
-                                return Padding(
-                                  padding: EdgeInsets.only(bottom: 10.r(context)),
-                                  child: Row(
-                                    children: [
-                                      Text(
-                                        '${_emoji(item.id)} ${item.name}',
-                                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
-                                      ),
-                                      const Spacer(),
-                                      SizedBox(
-                                        width: 100.r(context),
-                                        child: TextField(
-                                          controller: limitControllers[item.id],
-                                          keyboardType: TextInputType.number,
-                                          style: const TextStyle(color: Colors.white),
-                                          textAlign: TextAlign.end,
-                                          onChanged: (_) => setState(() {}),
-                                          decoration: InputDecoration(
-                                            hintText: 'Limit',
-                                            hintStyle: const TextStyle(color: AppColors.textSecondary),
-                                            filled: true,
-                                            fillColor: AppColors.darkBg,
-                                            contentPadding: EdgeInsets.symmetric(horizontal: 10.r(context), vertical: 8.r(context)),
-                                            border: OutlineInputBorder(
-                                              borderRadius: BorderRadius.circular(10.r(context)),
-                                              borderSide: BorderSide.none,
+                                SizedBox(height: 14.r(context)),
+                                Text(
+                                  'Category Limits',
+                                  style: TextStyle(color: AppColors.textSecondary, fontSize: 11.r(context), fontWeight: FontWeight.w700),
+                                ),
+                                SizedBox(height: 8.r(context)),
+                                ...items.map((item) {
+                                  return Padding(
+                                    padding: EdgeInsets.only(bottom: 6.r(context)),
+                                    child: Row(
+                                      children: [
+                                        Text(
+                                          '${_emoji(item.id)} ${item.name}',
+                                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13.r(context)),
+                                        ),
+                                        const Spacer(),
+                                        SizedBox(
+                                          width: 90.r(context),
+                                          child: TextField(
+                                            controller: limitControllers[item.id],
+                                            keyboardType: TextInputType.number,
+                                            style: TextStyle(color: Colors.white, fontSize: 13.r(context)),
+                                            textAlign: TextAlign.end,
+                                            onChanged: (_) => setState(() {}),
+                                            decoration: InputDecoration(
+                                              isDense: true,
+                                              hintText: 'Limit',
+                                              hintStyle: const TextStyle(color: AppColors.textSecondary),
+                                              filled: true,
+                                              fillColor: AppColors.darkBg,
+                                              contentPadding: EdgeInsets.symmetric(horizontal: 8.r(context), vertical: 6.r(context)),
+                                              border: OutlineInputBorder(
+                                                borderRadius: BorderRadius.circular(8.r(context)),
+                                                borderSide: BorderSide.none,
+                                              ),
                                             ),
                                           ),
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              }),
+                                      ],
+                                    ),
+                                  );
+                                }),
                               SizedBox(height: 16.r(context)),
                               Container(
                                 padding: EdgeInsets.all(12.r(context)),
@@ -1085,7 +1092,8 @@ class _BudgetScreenState extends State<BudgetScreen> {
                           ),
                         ),
                       ),
-                      SizedBox(height: 10.r(context)),
+                    ),
+                    SizedBox(height: 10.r(context)),
                       SizedBox(
                         width: double.infinity,
                         height: 48.r(context),

@@ -65,21 +65,21 @@ class _SplashMark extends StatelessWidget {
       height: 92.r(context),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(30.r(context)),
-        gradient: const LinearGradient(
-          colors: [AppColors.purple, AppColors.blue],
-          begin: Alignment.bottomLeft,
-          end: Alignment.topRight,
-        ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.purple.withValues(alpha: 0.38),
-            blurRadius: 34.r(context),
-            offset: Offset(0, 16.r(context)),
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 24.r(context),
+            offset: Offset(0, 12.r(context)),
           ),
         ],
       ),
-      child: Icon(Icons.account_balance_wallet_outlined,
-          size: 44.r(context), color: AppColors.textPrimary),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(30.r(context)),
+        child: Image.asset(
+          'assets/images/icon.png',
+          fit: BoxFit.cover,
+        ),
+      ),
     );
   }
 }

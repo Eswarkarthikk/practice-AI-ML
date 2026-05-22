@@ -74,14 +74,14 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               child: Container(
                 margin: isTablet ? EdgeInsets.symmetric(horizontal: 24.r(context)) : EdgeInsets.zero,
                 constraints: BoxConstraints(
-                  maxHeight: MediaQuery.sizeOf(context).height * 0.88,
+                  maxHeight: MediaQuery.sizeOf(context).height * 0.85,
                   maxWidth: isTablet ? 500.r(context) : double.infinity,
                 ),
                 decoration: BoxDecoration(
                   color: AppColors.darkBg,
                   borderRadius: isTablet
-                      ? BorderRadius.circular(28.r(context))
-                      : BorderRadius.vertical(top: Radius.circular(28.r(context))),
+                      ? BorderRadius.circular(24.r(context))
+                      : BorderRadius.vertical(top: Radius.circular(24.r(context))),
                   border: isTablet
                       ? Border.all(color: AppColors.darkBorder)
                       : const Border(top: BorderSide(color: AppColors.darkBorder)),
@@ -89,26 +89,27 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 child: Form(
                   key: _formKey,
                   child: ListView(
-                    shrinkWrap: isTablet,
-                    padding: EdgeInsets.fromLTRB(20.r(context), 10.r(context), 20.r(context), 28.r(context)),
+                    shrinkWrap: true,
+                    physics: const ClampingScrollPhysics(),
+                    padding: EdgeInsets.fromLTRB(16.r(context), 10.r(context), 16.r(context), 20.r(context)),
                     children: [
                       Center(
                         child: Container(
-                          width: 44.r(context),
-                          height: 5.r(context),
+                          width: 40.r(context),
+                          height: 4.r(context),
                           decoration: BoxDecoration(
                             color: AppColors.darkBorder,
                             borderRadius: BorderRadius.circular(4.r(context)),
                           ),
                         ),
                       ),
-                      SizedBox(height: 16.r(context)),
+                      SizedBox(height: 10.r(context)),
                       Row(
                         children: [
                           IconButton(
                               onPressed: () => Navigator.of(context).pop(),
                               icon: Icon(Icons.close,
-                                  color: AppColors.textPrimary, size: 30.r(context))),
+                                  color: AppColors.textPrimary, size: 24.r(context))),
                           Expanded(
                             child: Text.rich(
                               TextSpan(
@@ -122,15 +123,15 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 color: AppColors.textPrimary,
-                                fontSize: 25.r(context),
+                                fontSize: 20.r(context),
                                 fontWeight: FontWeight.w900,
                               ),
                             ),
                           ),
-                          SizedBox(width: 48.r(context)),
+                          SizedBox(width: 40.r(context)),
                         ],
                       ),
-                      SizedBox(height: 12.r(context)),
+                      SizedBox(height: 10.r(context)),
                       Row(
                         children: [
                           Expanded(
@@ -141,7 +142,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                 color: AppColors.orange,
                                 onChanged: _setType),
                           ),
-                          SizedBox(width: 10.r(context)),
+                          SizedBox(width: 8.r(context)),
                           Expanded(
                             child: _TypeChip(
                                 label: 'Income',
@@ -150,7 +151,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                 color: AppColors.green,
                                 onChanged: _setType),
                           ),
-                          SizedBox(width: 10.r(context)),
+                          SizedBox(width: 8.r(context)),
                           Expanded(
                             child: _TypeChip(
                                 label: 'Borrow / Lend',
@@ -164,7 +165,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         ],
                       ),
                       if (_type == 'borrow' || _type == 'lend') ...[
-                        SizedBox(height: 12.r(context)),
+                        SizedBox(height: 8.r(context)),
                         Row(
                           children: [
                             Expanded(
@@ -175,7 +176,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                   color: const Color(0xFFFFD44D),
                                   onChanged: _setType),
                             ),
-                            SizedBox(width: 12.r(context)),
+                            SizedBox(width: 8.r(context)),
                             Expanded(
                               child: _TypeChip(
                                   label: 'Lend',
@@ -187,7 +188,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           ],
                         ),
                       ],
-                      SizedBox(height: 20.r(context)),
+                      SizedBox(height: 12.r(context)),
                       FinanceTextField(
                         controller: _amountController,
                         label: 'Amount',
@@ -201,7 +202,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           return null;
                         },
                       ),
-                      SizedBox(height: 18.r(context)),
+                      SizedBox(height: 10.r(context)),
                       if (_type == 'income') ...[
                         FinanceSelectField<String>(
                           value: _categoryId,
@@ -213,7 +214,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           ],
                           onChanged: (value) => setState(() => _categoryId = value),
                         ),
-                        SizedBox(height: 18.r(context)),
+                        SizedBox(height: 10.r(context)),
                         FinanceSelectField<String>(
                           value: _sourceId,
                           label: 'Deposit To*',
@@ -237,7 +238,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                               .toList(),
                           onChanged: (value) => setState(() => _categoryId = value),
                         ),
-                        SizedBox(height: 18.r(context)),
+                        SizedBox(height: 10.r(context)),
                         FinanceSelectField<String>(
                           value: _sourceId,
                           label: 'From*',
@@ -261,7 +262,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           validator: (value) =>
                               value == null ? 'Select a source' : null,
                         ),
-                        SizedBox(height: 18.r(context)),
+                        SizedBox(height: 10.r(context)),
                         FinanceTextField(
                           controller: _counterpartyController,
                           label: 'Other Party*',
@@ -274,20 +275,20 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           },
                         ),
                       ],
-                      SizedBox(height: 18.r(context)),
+                      SizedBox(height: 10.r(context)),
                       Text('Date',
                           style: GoogleFonts.spaceMono(
                               color: AppColors.textPrimary,
                               fontSize: 12.r(context))),
-                      SizedBox(height: 8.r(context)),
+                      SizedBox(height: 4.r(context)),
                       GestureDetector(
                         onTap: _pickDate,
                         child: Container(
                           padding: EdgeInsets.symmetric(
-                              horizontal: 16.r(context), vertical: 12.r(context)),
+                              horizontal: 14.r(context), vertical: 10.r(context)),
                           decoration: BoxDecoration(
                             color: AppColors.darkCard,
-                            borderRadius: BorderRadius.circular(14.r(context)),
+                            borderRadius: BorderRadius.circular(12.r(context)),
                             border: Border.all(color: AppColors.darkBorder),
                           ),
                           child: Row(
@@ -296,26 +297,26 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                               Text(
                                 DateFormat('yyyy-MM-dd').format(_date),
                                 style: TextStyle(
-                                    fontSize: 13.r(context),
+                                    fontSize: 12.r(context),
                                     fontWeight: FontWeight.w600,
                                     color: AppColors.textPrimary),
                               ),
                               Icon(
                                 Icons.calendar_month_outlined,
                                 color: AppColors.green,
-                                size: 20.r(context),
+                                size: 18.r(context),
                               ),
                             ],
                           ),
                         ),
                       ),
-                      SizedBox(height: 18.r(context)),
+                      SizedBox(height: 10.r(context)),
                       FinanceTextField(
                         controller: _noteController,
                         label: 'Note',
                         hint: 'Add note (optional)',
                       ),
-                      SizedBox(height: 22.r(context)),
+                      SizedBox(height: 14.r(context)),
                       GradientActionButton(
                         onPressed: _saving ? null : () => _save(appState),
                         label: _saving

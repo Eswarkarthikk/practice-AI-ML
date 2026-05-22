@@ -67,29 +67,26 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     const Spacer(flex: 3),
-                    // Large wallet icon with glowing gradient
+                    // Large custom app icon logo
                     Container(
                       width: 100.r(context),
                       height: 100.r(context),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(32.r(context)),
-                        gradient: const LinearGradient(
-                          colors: [AppColors.purple, AppColors.blue],
-                          begin: Alignment.bottomLeft,
-                          end: Alignment.topRight,
-                        ),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.purple.withValues(alpha: 0.35),
-                            blurRadius: 40.r(context),
-                            offset: Offset(0, 16.r(context)),
+                            color: Colors.black.withValues(alpha: 0.2),
+                            blurRadius: 30.r(context),
+                            offset: Offset(0, 14.r(context)),
                           ),
                         ],
                       ),
-                      child: Icon(
-                        Icons.account_balance_wallet_outlined,
-                        size: 48.r(context),
-                        color: Colors.white,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(32.r(context)),
+                        child: Image.asset(
+                          'assets/images/icon.png',
+                          fit: BoxFit.cover,
+                        ),
                       ),
                     ),
                     const Spacer(flex: 2),

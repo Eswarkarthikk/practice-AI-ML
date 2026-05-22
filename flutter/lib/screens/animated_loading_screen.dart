@@ -54,23 +54,20 @@ class _AnimatedLoadingScreenState extends State<AnimatedLoadingScreen>
             height: 80.r(context),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(26.r(context)),
-              gradient: const LinearGradient(
-                colors: [AppColors.purple, AppColors.blue],
-                begin: Alignment.bottomLeft,
-                end: Alignment.topRight,
-              ),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.purple.withValues(alpha: 0.38),
-                  blurRadius: 30.r(context),
-                  offset: Offset(0, 12.r(context)),
+                  color: Colors.black.withValues(alpha: 0.2),
+                  blurRadius: 20.r(context),
+                  offset: Offset(0, 10.r(context)),
                 ),
               ],
             ),
-            child: Icon(
-              Icons.account_balance_wallet_outlined,
-              size: 38.r(context),
-              color: Colors.white,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(26.r(context)),
+              child: Image.asset(
+                'assets/images/icon.png',
+                fit: BoxFit.cover,
+              ),
             ),
           ),
         ),

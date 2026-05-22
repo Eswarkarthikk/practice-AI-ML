@@ -11,6 +11,7 @@ class FinanceCard extends StatelessWidget {
   final EdgeInsetsGeometry? margin;
   final VoidCallback? onTap;
   final Color? color;
+  final Color? borderColor;
 
   const FinanceCard({
     super.key,
@@ -19,13 +20,14 @@ class FinanceCard extends StatelessWidget {
     this.margin,
     this.onTap,
     this.color,
+    this.borderColor,
   });
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = color ?? (isDark ? AppColors.darkCard : AppColors.lightCard);
-    final border = isDark ? AppColors.darkBorder : AppColors.lightBorder;
+    final border = borderColor ?? (isDark ? AppColors.darkBorder : AppColors.lightBorder);
     
     final resolvedPadding = padding == const EdgeInsets.all(18)
         ? EdgeInsets.all(18.r(context))
